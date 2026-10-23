@@ -1,12 +1,13 @@
-import { LogOut, type LucideIcon } from 'lucide-react'
+import { LogOut } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
+import { BottomNav, type NavItem } from '@/components/layout/BottomNav'
 import { MapLines } from '@/components/illustrations/MapLines'
 import { Logo } from '@/components/ui/Logo'
 import { Notice } from '@/components/ui/Notice'
 import { useAuth } from '@/features/auth/AuthProvider'
 
-export type NavItem = { to: string; label: string; icon: LucideIcon; end?: boolean }
+export type { NavItem }
 
 /**
  * Signed-in layout. Bottom tab bar on phones, sidebar from the md breakpoint up.
@@ -86,30 +87,7 @@ export function AppShell({ items, area, topBar, bare = false }: { items: NavItem
         </main>
       </div>
 
-      <nav
-        aria-label={`${area} navigation`}
-        className="fixed inset-x-0 bottom-0 z-20 flex bg-ink pb-[env(safe-area-inset-bottom)] md:hidden"
-      >
-        {items.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.end}
-            aria-label={item.label}
-            className={({ isActive }) =>
-              `relative flex min-h-16 flex-1 items-center justify-center ${isActive ? 'text-brand-yellow' : 'text-brand-yellow/50'}`
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <item.icon className="size-8" strokeWidth={2.25} aria-hidden="true" />
-                {isActive ? <span className="absolute bottom-2 h-1 w-1 rounded-full bg-brand-yellow" aria-hidden="true" /> : null}
-                <span className="sr-only">{item.label}</span>
-              </>
-            )}
-          </NavLink>
-        ))}
-      </nav>
+      <BottomNav items={items} area={area} />
     </div>
   )
 }
