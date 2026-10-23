@@ -6,6 +6,8 @@ import { Card } from '@/components/ui/Card'
 import { Notice } from '@/components/ui/Notice'
 import { formatNaira } from '@/lib/formatting/money'
 import type { MapMarker } from '@/components/map/MapView'
+import { useAuth } from '@/features/auth/AuthProvider'
+import { ChatPanel } from '@/features/errands/ChatPanel'
 import { advanceErrand, completeErrand, getRunnerJob, releaseErrand } from './dispatchApi'
 
 const MapView = lazy(() => import('@/components/map/MapView').then((m) => ({ default: m.MapView })))
@@ -18,6 +20,7 @@ const NEXT: Record<string, { to: string; label: string } | undefined> = {
 
 export function ActiveJobCard({ errandId, onDone }: { errandId: string; onDone: () => void }) {
   const queryClient = useQueryClient()
+  const { user } = useAuth()
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [code, setCode] = useState('')
@@ -108,6 +111,7 @@ export function ActiveJobCard({ errandId, onDone }: { errandId: string; onDone: 
           <a className="text-sm font-semibold text-brand-red underline" target="_blank" rel="noreferrer" href={`https://www.google.com/maps/dir/?api=1&destination=${target.lat},${target.lng}`}>Open directions in your maps app</a>
         ) : null}
       </Card>
+      {user ? <ChatPanel errandId={errandId} meId={user.id} otherName={j.customer_name || 'customer'} open={!j.assignment_ended} /> : null}
       {error ? <Notice tone="error">{error}</Notice> : null}
 
       {next ? (

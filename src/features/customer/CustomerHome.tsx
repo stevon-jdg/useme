@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
 import { ArrowRight, Briefcase, Package, ShoppingBasket, ShoppingCart, ClipboardList, type LucideIcon } from 'lucide-react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/features/auth/AuthProvider'
-import { getTransport, type ErrandCategoryId } from '@/features/errands/catalog'
+import { type ErrandCategoryId } from '@/features/errands/catalog'
 import { fetchMyErrands, OPEN_STATUSES, STATUS_LABEL } from '@/features/errands/rideApi'
 import { formatNaira } from '@/lib/formatting/money'
 
@@ -13,6 +13,13 @@ const QUICK: { label: string; type: ErrandCategoryId; icon: LucideIcon; color: s
   { label: 'Market Run', type: 'market_run', icon: ShoppingBasket, color: 'text-brand-red' },
   { label: 'Personal', type: 'custom', icon: Briefcase, color: 'text-[#43b02a]' },
 ]
+
+const EXAMPLE: Record<string, string> = {
+  pickup_delivery: 'e.g. Pick up a parcel from Roadblock Park and deliver it to Sabon Gari',
+  shopping: 'e.g. Buy a phone charger from the electronics shop in the main market',
+  market_run: 'e.g. Buy tomatoes and pepper at the market and bring them to my house',
+  custom: 'e.g. Queue at the bank for me, or any other personal errand',
+}
 
 const CATEGORY_ICON: Record<ErrandCategoryId, { icon: LucideIcon; color: string }> = {
   pickup_delivery: { icon: Package, color: 'text-brand-orange' },
@@ -26,6 +33,8 @@ export function CustomerHome() {
   const { configured } = useAuth()
   const navigate = useNavigate()
   const [text, setText] = useState('')
+  const [hint, setHint] = useState('Describe your errand here...')
+  const box = useRef<HTMLTextAreaElement>(null)
   const errands = useQuery({ queryKey: ['my-errands'], queryFn: fetchMyErrands, enabled: configured, refetchInterval: 15000 })
 
   // Open errands first, then the most recent ones.
@@ -45,10 +54,11 @@ export function CustomerHome() {
         <h2 id="need-heading" className="text-lg">Tell us what you need?</h2>
         <div className="relative">
           <textarea
+            ref={box}
             value={text}
             onChange={(e) => setText(e.target.value)}
             maxLength={600}
-            placeholder="Describe your errand here..."
+            placeholder={hint}
             aria-label="Describe your errand"
             className="h-44 w-full resize-none rounded-2xl border-2 border-line bg-surface/90 p-4 pb-14 text-base placeholder:text-ink-soft/60 focus:border-brand-red focus:outline-none"
           />
@@ -66,10 +76,10 @@ export function CustomerHome() {
         <ul className="grid grid-cols-4 gap-3">
           {QUICK.map((q) => (
             <li key={q.label}>
-              <Link to={`/app/errands/new?type=${q.type}`} className="flex h-24 flex-col items-center justify-center gap-2 rounded-xl border border-ink/30 bg-surface/90 p-1 text-center text-[11px] leading-tight">
+              <button type="button" onClick={() => { setHint(EXAMPLE[q.type] ?? hint); box.current?.focus() }} className="flex h-24 w-full flex-col items-center justify-center gap-2 rounded-xl border border-ink/30 bg-surface/90 p-1 text-center text-[11px] leading-tight">
                 <q.icon className={`size-9 ${q.color}`} strokeWidth={1.6} aria-hidden="true" />
                 {q.label}
-              </Link>
+              </button>
             </li>
           ))}
         </ul>
@@ -97,7 +107,7 @@ export function CustomerHome() {
                 <Icon className={`size-10 shrink-0 ${color}`} strokeWidth={1.6} aria-hidden="true" />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-lg">{e.title}</span>
-                  <span className="block text-xs text-ink-soft">{getTransport(e.transport_id).label} {e.route_km} km{open ? ` · ${STATUS_LABEL[e.status]}` : e.status === 'cancelled' ? ' · Cancelled' : ''}</span>
+                  <span className="block text-xs text-ink-soft">{e.route_km ? `${e.route_km} km` : e.pickup_area ?? ''}{open ? ` · ${STATUS_LABEL[e.status]}` : e.status === 'cancelled' ? ' · Cancelled' : ''}</span>
                   <span className="block text-lg font-semibold tabular-nums">{formatNaira(e.agreed_fare_kobo ?? e.suggested_fare_kobo)}</span>
                 </span>
               </Link>
