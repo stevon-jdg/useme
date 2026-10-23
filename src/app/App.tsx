@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   Package,
   ShieldCheck,
+  Tag,
   User,
   Users,
   Wallet,
@@ -12,7 +13,6 @@ import {
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router-dom'
 import { AppShell, type NavItem } from '@/components/layout/AppShell'
-import { ComingSoon } from '@/components/ui/ComingSoon'
 import { AuthProvider } from '@/features/auth/AuthProvider'
 import { ForgotPasswordPage } from '@/features/auth/ForgotPasswordPage'
 import { LoginPage } from '@/features/auth/LoginPage'
@@ -35,6 +35,8 @@ const AdminHome = lazy(() => import('@/features/admin/AdminHome').then((m) => ({
 const AdminErrandsPage = lazy(() => import('@/features/admin/AdminErrandsPage').then((m) => ({ default: m.AdminErrandsPage })))
 const AdminBalancesPage = lazy(() => import('@/features/admin/AdminBalancesPage').then((m) => ({ default: m.AdminBalancesPage })))
 const WalletPage = lazy(() => import('@/features/wallet/WalletPage').then((m) => ({ default: m.WalletPage })))
+const RunnerProfilePage = lazy(() => import('@/features/runner/RunnerProfilePage').then((m) => ({ default: m.RunnerProfilePage })))
+const AdminPricingPage = lazy(() => import('@/features/admin/AdminPricingPage').then((m) => ({ default: m.AdminPricingPage })))
 const AdminRunnersPage = lazy(() => import('@/features/admin/AdminRunnersPage').then((m) => ({ default: m.AdminRunnersPage })))
 
 const queryClient = new QueryClient({
@@ -67,6 +69,7 @@ const adminItems: NavItem[] = [
   { to: '/admin/runners', label: 'Runners', icon: Users },
   { to: '/admin/errands', label: 'Errands', icon: Package },
   { to: '/admin/balances', label: 'Balances', icon: Wallet },
+  { to: '/admin/pricing', label: 'Pricing', icon: Tag },
   customerItem,
 ]
 
@@ -118,7 +121,7 @@ export function App() {
                   <Route path="/runner" element={<AppShell items={runnerItems} area="Runner" />}>
                     <Route index element={<RunnerDashboard />} />
                     <Route path="earnings" element={<EarningsPage />} />
-                    <Route path="profile" element={<ComingSoon title="Runner profile" phase="Phase 4" />} />
+                    <Route path="profile" element={<RunnerProfilePage />} />
                   </Route>
                 </Route>
 
@@ -128,6 +131,7 @@ export function App() {
                     <Route path="runners" element={<AdminRunnersPage />} />
                     <Route path="errands" element={<AdminErrandsPage />} />
                     <Route path="balances" element={<AdminBalancesPage />} />
+                    <Route path="pricing" element={<AdminPricingPage />} />
                   </Route>
                 </Route>
               </Route>
