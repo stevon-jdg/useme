@@ -12,7 +12,7 @@ export type NavItem = { to: string; label: string; icon: LucideIcon; end?: boole
  * Signed-in layout. Bottom tab bar on phones, sidebar from the md breakpoint up.
  * The same shell serves customer, runner and admin, only the nav items change.
  */
-export function AppShell({ items, area, topBar }: { items: NavItem[]; area: string; topBar?: ReactNode }) {
+export function AppShell({ items, area, topBar, bare = false }: { items: NavItem[]; area: string; topBar?: ReactNode; bare?: boolean }) {
   const { user, signOut, configured } = useAuth()
 
   return (
@@ -49,8 +49,8 @@ export function AppShell({ items, area, topBar }: { items: NavItem[]; area: stri
         ) : null}
       </aside>
 
-      <div className={`flex min-w-0 flex-col ${topBar ? 'h-dvh md:h-auto md:min-h-dvh' : ''}`}>
-        {topBar ?? (
+      <div className={`flex min-w-0 flex-col ${topBar || bare ? 'h-dvh md:h-auto md:min-h-dvh' : ''}`}>
+        {bare ? null : topBar ?? (
           <header className="flex items-center justify-between border-b border-line bg-surface px-4 py-3 md:hidden">
           <Logo />
           {user ? (
@@ -68,7 +68,9 @@ export function AppShell({ items, area, topBar }: { items: NavItem[]; area: stri
 
         <main
           className={`relative mx-auto w-full max-w-3xl space-y-4 px-4 pt-5 md:pb-10 ${
-            topBar
+            bare
+              ? 'flex min-h-0 flex-1 flex-col overflow-hidden !px-0 !pt-0 pb-[var(--nav-h)] md:block md:flex-none md:overflow-visible md:!px-4 md:!pt-5'
+              : topBar
               ? 'flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden rounded-t-[1.75rem] bg-surface px-5 pb-[var(--nav-h)] pt-6 -mt-6 md:mt-0 md:block md:flex-none md:overflow-visible md:rounded-none md:px-4 md:pt-5'
               : 'pb-28'
           }`}

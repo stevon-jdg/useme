@@ -1,4 +1,4 @@
-import { Loader2, Pencil, Sparkles, X } from 'lucide-react'
+import { ArrowLeft, Loader2, Pencil, Sparkles, X } from 'lucide-react'
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
@@ -39,7 +39,8 @@ const isCategory = (v: string | null): v is ErrandCategoryId => ERRAND_CATEGORIE
 export function RequestPage() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
-  const handoff = (useLocation().state ?? null) as { text?: string } | null
+  const location = useLocation()
+  const handoff = (location.state ?? null) as { text?: string } | null
   const typed = handoff?.text?.trim() ?? ''
   const typeParam = params.get('type')
   const chosen: ErrandCategoryId | null = isCategory(typeParam) && typeParam !== 'custom' ? typeParam : null
@@ -52,7 +53,6 @@ export function RequestPage() {
   const [draftTitle, setDraftTitle] = useState('')
   const [draftText, setDraftText] = useState('')
   const [summary, setSummary] = useState('')
-  const [aiNote, setAiNote] = useState<string | null>(null)
   const [unsafe, setUnsafe] = useState(false)
 
   const [fromText, setFromText] = useState('')
@@ -118,7 +118,6 @@ export function RequestPage() {
     setTitle(keepTitle || parsed.title)
     setSummary(parsed.summary !== parsed.title ? parsed.summary : '')
     setUnsafe(parsed.unsafe)
-    setAiNote(parsed.source === 'ai' ? 'Written for the runner from your message.' : 'Taken from your message. You can change it.')
     setStage('ready')
     await Promise.all([fill('from', parsed.pickupText, parsed.pickupIsMe), fill('to', parsed.destinationText, parsed.destinationIsMe)])
   }
@@ -296,14 +295,17 @@ export function RequestPage() {
   }
 
   return (
-    <div className="relative z-10 -mx-5 -mb-[var(--nav-h)] -mt-6 flex min-h-0 flex-1 flex-col md:-mx-4 md:mb-0 md:mt-0 md:h-[calc(100dvh-3rem)] md:flex-none">
-      <div className="h-[30%] min-h-28 max-h-64 shrink-0 overflow-hidden bg-canvas md:h-56 md:rounded-2xl">
+    <div className="relative z-10 -mb-[var(--nav-h)] flex min-h-0 flex-1 flex-col md:mb-0 md:h-[calc(100dvh-3rem)] md:flex-none">
+      <div className="relative h-[36%] min-h-40 max-h-80 shrink-0 overflow-hidden bg-canvas md:h-64 md:rounded-2xl">
+        <button type="button" onClick={() => (location.key === 'default' ? navigate('/app') : navigate(-1))} aria-label="Go back" className="absolute left-3 top-[calc(env(safe-area-inset-top)+0.75rem)] z-[600] grid size-11 place-items-center rounded-full bg-surface shadow-card">
+          <ArrowLeft className="size-6" aria-hidden="true" />
+        </button>
         <Suspense fallback={<div className="grid size-full place-items-center text-sm text-ink-soft">Loading map…</div>}>
           <MapView className="size-full" label="Map of your errand route" center={center} markers={markers} fitToMarkers={markers.length > 0} interactive={false} />
         </Suspense>
       </div>
 
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 pb-4 pt-4 md:px-0">
+      <div className="relative z-10 -mt-5 min-h-0 flex-1 space-y-3 overflow-y-auto rounded-t-3xl bg-surface px-5 pb-4 pt-5 shadow-[0_-6px_16px_rgba(0,0,0,0.08)] md:mt-0 md:rounded-none md:px-0 md:shadow-none">
         {stage === 'describe' ? (
           <section className="space-y-2" aria-labelledby="describe-heading">
             <h2 id="describe-heading" className="text-base font-medium">What should the runner do?</h2>
@@ -326,29 +328,27 @@ export function RequestPage() {
           </div>
         ) : (
           <>
-            <div className="rounded-control bg-brand-yellow-soft p-3">
+            <div className="rounded-xl border border-[#cfeed6] bg-[#eefaf0] p-2.5">
               {editing ? (
                 <div className="space-y-2">
-                  <label className="block space-y-1 text-sm font-semibold">
+                  <label className="block space-y-1 text-xs font-semibold">
                     Heading for the runner
-                    <input value={draftTitle} maxLength={80} onChange={(e) => setDraftTitle(e.target.value)} className="min-h-11 w-full rounded-control border-2 border-line bg-surface px-3 font-bold" />
+                    <input value={draftTitle} maxLength={80} onChange={(e) => setDraftTitle(e.target.value)} className="min-h-11 w-full rounded-xl border-2 border-line bg-surface px-3 text-sm font-semibold" />
                   </label>
-                  <label className="block space-y-1 text-sm font-semibold">
+                  <label className="block space-y-1 text-xs font-semibold">
                     What should the runner do?
-                    <textarea value={draftText} maxLength={600} rows={4} onChange={(e) => setDraftText(e.target.value)} className="w-full resize-none rounded-control border-2 border-line bg-surface p-3 text-base font-normal" />
+                    <textarea value={draftText} maxLength={600} rows={3} onChange={(e) => setDraftText(e.target.value)} className="w-full resize-none rounded-xl border-2 border-line bg-surface p-3 text-sm font-normal" />
                   </label>
-                  <p className="text-xs text-ink-soft">If you change the details, we read them again and update the places you have not edited.</p>
                   <Button fullWidth onClick={finishEdit}>Done</Button>
                 </div>
               ) : (
                 <div className="flex items-start gap-2">
-                  <Sparkles className="mt-0.5 size-5 shrink-0 text-brand-orange" aria-hidden="true" />
+                  <Sparkles className="mt-0.5 size-4 shrink-0 text-success" aria-hidden="true" />
                   <div className="min-w-0 flex-1">
-                    <p className="font-bold">{title}</p>
-                    {summary ? <p className="mt-1 line-clamp-2 text-sm">{summary}</p> : null}
-                    {aiNote ? <p className="mt-1 text-xs text-ink-soft">{aiNote}</p> : null}
+                    <p className="text-sm font-semibold leading-snug">{title}</p>
+                    {summary ? <p className="mt-0.5 line-clamp-2 text-xs text-ink-soft">{summary}</p> : null}
                   </div>
-                  <button type="button" onClick={startEdit} aria-label="Edit the errand" className="grid size-11 shrink-0 place-items-center rounded-full hover:bg-black/5">
+                  <button type="button" onClick={startEdit} aria-label="Edit the errand" className="-my-1 -mr-1 grid size-10 shrink-0 place-items-center rounded-full text-ink-soft hover:bg-black/5">
                     <Pencil className="size-4" aria-hidden="true" />
                   </button>
                 </div>
@@ -356,8 +356,7 @@ export function RequestPage() {
             </div>
             {unsafe ? <Notice tone="error">We cannot help with this request. UseMe runners only do lawful, safe errands.</Notice> : null}
 
-            <section aria-label="Route" className="relative space-y-3 rounded-2xl border-2 border-line bg-surface/90 p-3">
-              <span className="absolute bottom-12 left-[1.2rem] top-12 w-px bg-line" aria-hidden="true" />
+            <section aria-label="Route" className="space-y-3">
               <PlaceField
                 label="From"
                 dot="green"
@@ -372,7 +371,6 @@ export function RequestPage() {
                 onPin={() => openPin('from')}
                 onUseMyLocation={() => void useMyLocation('from')}
               />
-              <div className="ml-6 border-t border-line" />
               <PlaceField
                 label={needsTo ? 'To' : 'To (only if something must be delivered)'}
                 dot="red"
@@ -389,7 +387,7 @@ export function RequestPage() {
               />
             </section>
             {locationError ? <Notice tone="warning">{locationError}</Notice> : null}
-            <p className="text-xs text-ink-soft">The fee is fixed. If your errand needs more money, like paying for items, you agree that with your runner in the chat.</p>
+            <p className="text-[11px] text-ink-soft">Extra costs, like paying for items, are agreed with your runner in chat.</p>
             {quoteError ? <Notice tone="error">{quoteError}</Notice> : null}
             {error ? <Notice tone="error">{error}</Notice> : null}
           </>

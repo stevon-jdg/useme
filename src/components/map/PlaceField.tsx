@@ -74,28 +74,32 @@ export function PlaceField({ label, text, place, placeholder, dot, alternatives 
 
   return (
     <div className="relative">
-      <div className="flex items-center gap-3">
-        <span className={`size-3.5 shrink-0 rounded-full ${dot === 'green' ? 'bg-success' : 'bg-brand-red'}`} aria-hidden="true" />
-        <div className="relative min-w-0 flex-1">
-          <label htmlFor={id} className="block text-xs font-medium text-ink-soft">{label}</label>
-          <input
-            id={id}
-            value={text}
-            onChange={(e) => onText(e.target.value)}
-            onFocus={() => setOpen(true)}
-            onBlur={() => window.setTimeout(() => setOpen(false), 150)}
-            placeholder={placeholder}
-            autoComplete="off"
-            role="combobox"
-            aria-expanded={open && options.length > 0}
-            aria-controls={`${id}-list`}
-            className="w-full truncate bg-transparent pr-7 text-base font-medium placeholder:font-normal placeholder:text-ink-soft/60 focus:outline-none"
-          />
-          <span className="pointer-events-none absolute bottom-0.5 right-0 text-ink-soft">
-            {loading ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : place ? <Check className="size-4 text-success" aria-hidden="true" /> : null}
-          </span>
+      <div className="flex items-end gap-2">
+        <div className="min-w-0 flex-1">
+          <label htmlFor={id} className="mb-1 flex items-center gap-2 text-sm font-semibold">
+            <span className={`size-3 shrink-0 rounded-full ${dot === 'green' ? 'bg-success' : 'bg-brand-red'}`} aria-hidden="true" />
+            {label}
+          </label>
+          <div className="relative">
+            <input
+              id={id}
+              value={text}
+              onChange={(e) => onText(e.target.value)}
+              onFocus={() => setOpen(true)}
+              onBlur={() => window.setTimeout(() => setOpen(false), 150)}
+              placeholder={placeholder}
+              autoComplete="off"
+              role="combobox"
+              aria-expanded={open && options.length > 0}
+              aria-controls={`${id}-list`}
+              className="min-h-12 w-full truncate rounded-xl border-2 border-ink/25 bg-surface pl-3 pr-9 text-base text-ink placeholder:text-ink-soft focus:border-brand-red focus:outline-none"
+            />
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-soft">
+              {loading ? <Loader2 className="size-5 animate-spin" aria-hidden="true" /> : place ? <Check className="size-5 text-success" aria-hidden="true" /> : null}
+            </span>
+          </div>
         </div>
-        <button type="button" onClick={onPin} aria-label={`Choose ${label.toLowerCase()} on the map`} className="grid size-11 shrink-0 place-items-center rounded-full bg-black/5 hover:bg-black/10">
+        <button type="button" onClick={onPin} aria-label={`Choose ${label.toLowerCase()} on the map`} className="grid size-12 shrink-0 place-items-center rounded-xl border-2 border-ink/25 bg-surface hover:border-brand-red">
           <MapPin className="size-5" aria-hidden="true" />
         </button>
       </div>
@@ -114,14 +118,14 @@ export function PlaceField({ label, text, place, placeholder, dot, alternatives 
       ) : null}
 
       {offerMyLocation && !place ? (
-        <button type="button" onClick={onUseMyLocation} disabled={locating} className="mt-2 ml-6 inline-flex min-h-10 items-center gap-2 rounded-full bg-brand-yellow-soft px-4 text-sm font-semibold">
+        <button type="button" onClick={onUseMyLocation} disabled={locating} className="mt-2 inline-flex min-h-10 items-center gap-2 rounded-full bg-brand-yellow-soft px-4 text-sm font-semibold">
           {locating ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Crosshair className="size-4" aria-hidden="true" />}
           {locating ? 'Finding you…' : 'Use where I am now'}
         </button>
       ) : null}
 
       {suggestions.length > 0 ? (
-        <div className="mt-2 ml-6">
+        <div className="mt-2">
           <p className="mb-1 text-xs text-ink-soft">Did you mean?</p>
           <ul className="flex flex-col gap-1">
             {suggestions.map((o) => (
@@ -137,9 +141,9 @@ export function PlaceField({ label, text, place, placeholder, dot, alternatives 
       ) : null}
 
       {!place && searched && options.length === 0 && !loading && suggestions.length === 0 ? (
-        <p className="mt-1 ml-6 text-xs text-brand-red-dark">We could not find that. Try another spelling, or tap the pin to choose it on the map.</p>
+        <p className="mt-1 text-xs text-brand-red-dark">We could not find that. Try another spelling, or tap the pin to choose it on the map.</p>
       ) : null}
-      {failed ? <p className="mt-1 ml-6 text-xs text-brand-red-dark">Place search is not reachable. Tap the pin to choose it on the map.</p> : null}
+      {failed ? <p className="mt-1 text-xs text-brand-red-dark">Place search is not reachable. Tap the pin to choose it on the map.</p> : null}
     </div>
   )
 }

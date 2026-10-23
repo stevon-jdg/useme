@@ -13,7 +13,7 @@ import {
   Wallet,
 } from 'lucide-react'
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AppShell, type NavItem } from '@/components/layout/AppShell'
 import { AuthProvider } from '@/features/auth/AuthProvider'
 import { ForgotPasswordPage } from '@/features/auth/ForgotPasswordPage'
@@ -58,7 +58,9 @@ const customerItems: NavItem[] = [
 
 /** Customer screens follow the dark-bar design. Runner and admin switching live in the menu. */
 function CustomerShell() {
-  return <AppShell items={customerItems} area="Customer" topBar={<CustomerTopBar />} />
+  // The route page puts the map at the very top, so it brings its own back button and no header.
+  const bare = useLocation().pathname === '/app/errands/new'
+  return <AppShell items={customerItems} area="Customer" topBar={bare ? undefined : <CustomerTopBar />} bare={bare} />
 }
 
 const runnerItems: NavItem[] = [
