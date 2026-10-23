@@ -1,13 +1,13 @@
-import { Loader2, Sparkles } from 'lucide-react'
+import { Loader2, Pencil, Sparkles } from 'lucide-react'
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { PlaceField } from '@/components/map/PlaceField'
 import { Button } from '@/components/ui/Button'
 import { Notice } from '@/components/ui/Notice'
 import { distanceKm, estimateRoadKm } from '@/lib/geo'
-import { formatNaira, nairaToKobo } from '@/lib/formatting/money'
+import { formatNaira } from '@/lib/formatting/money'
 import { searchPlaces, type Place } from '@/services/geocoding/geocode'
-import { ERRAND_CATEGORIES, TRANSPORT_TYPES, getCategory, getTransport, type ErrandCategoryId, type TransportId } from './catalog'
+import { getCategory, type ErrandCategoryId } from './catalog'
 import { parseErrand } from './parseErrand'
 import { getQuote, postErrand, type Quote } from './rideApi'
 import type { LatLng, MapMarker } from '@/components/map/MapView'
@@ -15,38 +15,28 @@ import type { LatLng, MapMarker } from '@/components/map/MapView'
 const MapView = lazy(() => import('@/components/map/MapView').then((m) => ({ default: m.MapView })))
 
 const JALINGO: LatLng = { lat: 8.8937, lng: 11.3596 }
-
-type Step = 'places' | 'details'
 type Field = 'from' | 'to'
-
-const field =
-  'w-full min-h-11 rounded-control border-2 border-line bg-surface px-3 text-base focus:border-brand-red focus:outline-none'
+type Stage = 'describe' | 'reading' | 'ready'
 
 const areaOf = (place: Place, text: string) => (place.area || text.split(',')[0] || 'Jalingo').trim().slice(0, 80)
 
 /**
- * Describe it, check From and To, see the fixed price, request.
- * What the customer typed on the home screen is read by the AI, which fills the heading, the type and the places.
+ * Describe it, check From and To, find a runner. Nothing else is asked.
+ * The AI writes the heading and picks the type. The fee is fixed by the server. Anything extra is agreed in the chat.
  */
 export function RequestPage() {
   const navigate = useNavigate()
-  const [params] = useSearchParams()
   const handoff = (useLocation().state ?? null) as { text?: string } | null
   const typed = handoff?.text?.trim() ?? ''
-  const presetType = ERRAND_CATEGORIES.find((c) => c.id === params.get('type'))?.id
 
-  const [step, setStep] = useState<Step>('places')
-  const [reading, setReading] = useState(Boolean(typed))
+  const [stage, setStage] = useState<Stage>(typed ? 'reading' : 'describe')
+  const [text, setText] = useState('')
+  const [category, setCategory] = useState<ErrandCategoryId>('custom')
+  const [title, setTitle] = useState('')
+  const [editingTitle, setEditingTitle] = useState(false)
+  const [summary, setSummary] = useState('')
   const [aiNote, setAiNote] = useState<string | null>(null)
   const [unsafe, setUnsafe] = useState(false)
-
-  const [category, setCategory] = useState<ErrandCategoryId>(presetType ?? 'pickup_delivery')
-  const [transport, setTransport] = useState<TransportId>('keke')
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [instructions, setInstructions] = useState('')
-  const [budget, setBudget] = useState('')
-  const [stops, setStops] = useState(0)
 
   const [fromText, setFromText] = useState('')
   const [toText, setToText] = useState('')
@@ -65,46 +55,47 @@ export function RequestPage() {
   const cat = getCategory(category)
   const needsTo = cat.needsDestination
 
-  // Read what the customer typed, once. The AI fills the form. Nothing is sent until they press Request.
+  async function read(input: string) {
+    setStage('reading')
+    const parsed = await parseErrand(input)
+    setCategory(parsed.category)
+    setTitle(parsed.title)
+    setSummary(parsed.summary !== parsed.title ? parsed.summary : '')
+    setUnsafe(parsed.unsafe)
+    setAiNote(parsed.source === 'ai' ? 'Written for the runner from your message.' : 'Taken from your message. You can change it.')
+    if (parsed.pickupText) setFromText(parsed.pickupText)
+    if (parsed.destinationText) setToText(parsed.destinationText)
+    setStage('ready')
+    // Look the places up so the map opens with them already marked.
+    for (const [place, set] of [[parsed.pickupText, setFrom], [parsed.destinationText, setTo]] as const) {
+      if (!place) continue
+      try {
+        const found = await searchPlaces(place)
+        if (found[0]) set(found[0])
+      } catch {
+        /* the field explains itself when the person edits it */
+      }
+    }
+  }
+
   const started = useRef(false)
   useEffect(() => {
     if (!typed || started.current) return
     started.current = true
-    void (async () => {
-      const parsed = await parseErrand(typed)
-      setCategory(presetType ?? parsed.category)
-      setTitle(parsed.title)
-      setDescription(parsed.summary !== parsed.title ? parsed.summary : '')
-      setStops(parsed.extraStops)
-      if (parsed.budgetNaira && getCategory(parsed.category).allowsBudget) setBudget(String(parsed.budgetNaira))
-      setUnsafe(parsed.unsafe)
-      setAiNote(parsed.source === 'ai' ? 'Understood from your message. Check it is right.' : 'Filled in from your message. Please check the details.')
-      if (parsed.pickupText) setFromText(parsed.pickupText)
-      if (parsed.destinationText) setToText(parsed.destinationText)
-      setReading(false)
-      // Look the places up so the map opens with them already marked.
-      for (const [text, set] of [[parsed.pickupText, setFrom], [parsed.destinationText, setTo]] as const) {
-        if (!text) continue
-        try {
-          const found = await searchPlaces(text)
-          if (found[0]) set(found[0])
-        } catch {
-          /* the field shows its own message when the person edits it */
-        }
-      }
-    })()
-  }, [typed, presetType])
+    void read(typed)
+  }, [typed])
 
   const routeKm = useMemo(() => {
     if (!from) return null
-    return to && needsTo ? estimateRoadKm(from, to) : 1
-  }, [from, to, needsTo])
-  const tooFar = routeKm !== null && routeKm > getTransport(transport).maxKm
+    return to ? estimateRoadKm(from, to) : 1
+  }, [from, to])
+
+  const placesReady = Boolean(from) && (!needsTo || Boolean(to))
 
   useEffect(() => {
-    if (step !== 'details' || routeKm === null || tooFar) return
+    if (stage !== 'ready' || routeKm === null || !placesReady) return
     let cancelled = false
-    getQuote(category, transport, routeKm, stops)
+    getQuote(category, routeKm)
       .then((q) => {
         if (cancelled) return
         setQuote(q)
@@ -118,17 +109,16 @@ export function RequestPage() {
     return () => {
       cancelled = true
     }
-  }, [step, category, transport, routeKm, stops, tooFar])
+  }, [stage, category, routeKm, placesReady])
 
   const markers = useMemo<MapMarker[]>(() => {
     const list: MapMarker[] = []
     if (from) list.push({ id: 'f', kind: 'pickup', position: from, label: 'From' })
-    if (to && needsTo) list.push({ id: 't', kind: 'destination', position: to, label: 'To' })
+    if (to) list.push({ id: 't', kind: 'destination', position: to, label: 'To' })
     return list
-  }, [from, to, needsTo])
+  }, [from, to])
 
-  // When a place is chosen the map moves to it.
-  const lastPlace = useRef<string>('')
+  const lastPlace = useRef('')
   useEffect(() => {
     const p = to ?? from
     const key = p ? `${p.lat},${p.lng}` : ''
@@ -138,24 +128,28 @@ export function RequestPage() {
     }
   }, [from, to])
 
-  function setPlace(which: Field, place: Place | null) {
-    if (which === 'from') setFrom(place)
-    else setTo(place)
-  }
-
-  function onText(which: Field, text: string) {
-    if (which === 'from') setFromText(text)
-    else setToText(text)
-    // Editing the words clears the old match, so a stale pin can never be sent.
-    setPlace(which, null)
+  function onText(which: Field, value: string) {
+    if (which === 'from') {
+      setFromText(value)
+      setFrom(null)
+    } else {
+      setToText(value)
+      setTo(null)
+    }
+    setQuote(null)
   }
 
   function confirmPin() {
     if (!pinning) return
-    const text = (pinning === 'from' ? fromText : toText).trim()
-    const label = text || 'Pinned location'
-    setPlace(pinning, { label, area: text.split(',')[0] || 'Jalingo', lat: center.lat, lng: center.lng })
-    if (!text) (pinning === 'from' ? setFromText : setToText)('Pinned location')
+    const value = (pinning === 'from' ? fromText : toText).trim()
+    const place: Place = { label: value || 'Pinned location', area: value.split(',')[0] || 'Jalingo', lat: center.lat, lng: center.lng }
+    if (pinning === 'from') {
+      setFrom(place)
+      if (!value) setFromText('Pinned location')
+    } else {
+      setTo(place)
+      if (!value) setToText('Pinned location')
+    }
     setPinning(null)
   }
 
@@ -172,38 +166,25 @@ export function RequestPage() {
     )
   }
 
-  function toDetails() {
-    if (!from) return setError('Choose where it starts. Pick a match from the list, or place the pin.')
-    if (needsTo && !to) return setError('Choose where it goes. Pick a match from the list, or place the pin.')
-    if (needsTo && to && distanceKm(from, to) < 0.05) return setError('From and To are the same spot.')
-    setError(null)
-    setStep('details')
-  }
-
-  const budgetNaira = Number(budget.replace(/,/g, ''))
-  const budgetKobo = cat.allowsBudget && budget.trim() !== '' && Number.isFinite(budgetNaira) && budgetNaira > 0 ? nairaToKobo(budgetNaira) : 0
-  const ready = quote !== null && title.trim().length >= 3 && Boolean(from) && (!needsTo || Boolean(to)) && !tooFar && !unsafe
+  const ready = quote !== null && title.trim().length >= 3 && placesReady && !unsafe
 
   async function request() {
     if (!from || routeKm === null || !ready) return
+    if (to && distanceKm(from, to) < 0.05) return setError('From and To are the same spot.')
     setPosting(true)
     setError(null)
     try {
       const id = await postErrand({
         category,
         title: title.trim(),
-        description: description.trim().slice(0, 600),
-        instructions: instructions.trim(),
+        description: summary.trim().slice(0, 600),
         pickupText: fromText.trim() || from.label,
         pickupArea: areaOf(from, fromText),
         pickup: { lat: from.lat, lng: from.lng },
         destinationText: toText.trim() || to?.label || '',
         destinationArea: to ? areaOf(to, toText) : '',
-        destination: needsTo && to ? { lat: to.lat, lng: to.lng } : null,
-        transport,
+        destination: to ? { lat: to.lat, lng: to.lng } : null,
         routeKm,
-        extraStops: stops,
-        shoppingBudgetKobo: budgetKobo,
       })
       navigate(`/app/errands/${id}`, { replace: true })
     } catch (e) {
@@ -216,7 +197,7 @@ export function RequestPage() {
     <div className="relative -mx-5 -mb-28 -mt-8 flex h-[calc(100dvh-4rem)] min-h-[34rem] flex-col md:-mx-4 md:mb-0 md:mt-0 md:h-[calc(100dvh-3rem)]">
       <Suspense fallback={<div className="grid flex-1 place-items-center bg-canvas text-ink-soft">Loading map…</div>}>
         <MapView
-          className="min-h-48 flex-1"
+          className="min-h-40 flex-1"
           label={pinning ? 'Map. Drag to choose the spot under the pin.' : 'Map of your errand route'}
           center={center}
           markers={markers}
@@ -232,10 +213,16 @@ export function RequestPage() {
         </button>
       ) : null}
 
-      <div className="z-[600] max-h-[78%] space-y-3 overflow-y-auto rounded-t-3xl bg-surface p-4 pb-24 shadow-[0_-8px_24px_rgba(0,0,0,0.12)] md:pb-4">
+      <div className="z-[600] max-h-[80%] space-y-3 overflow-y-auto rounded-t-3xl bg-surface p-4 pb-24 shadow-[0_-8px_24px_rgba(0,0,0,0.12)] md:pb-4">
         <div className="mx-auto h-1.5 w-10 rounded-full bg-line" aria-hidden="true" />
 
-        {reading ? (
+        {stage === 'describe' ? (
+          <>
+            <h1 className="text-lg font-extrabold">What do you need?</h1>
+            <textarea value={text} onChange={(e) => setText(e.target.value)} maxLength={600} autoFocus rows={4} placeholder="Describe your errand here..." aria-label="Describe your errand" className="w-full resize-none rounded-2xl border-2 border-line p-4 text-base focus:border-brand-red focus:outline-none" />
+            <Button size="lg" fullWidth disabled={text.trim().length < 3} onClick={() => void read(text.trim())}>Continue</Button>
+          </>
+        ) : stage === 'reading' ? (
           <div className="flex items-center gap-3 py-6" role="status">
             <Loader2 className="size-6 animate-spin text-brand-red" aria-hidden="true" />
             <p className="font-semibold">Reading your request…</p>
@@ -249,76 +236,43 @@ export function RequestPage() {
               <Button size="lg" fullWidth onClick={confirmPin}>Set {pinning === 'from' ? 'From' : 'To'} here</Button>
             </div>
           </>
-        ) : step === 'places' ? (
-          <>
-            {title ? (
-              <div className="flex items-start gap-2 rounded-control bg-brand-yellow-soft p-3">
-                <Sparkles className="mt-0.5 size-5 shrink-0 text-brand-orange" aria-hidden="true" />
-                <div className="min-w-0">
-                  <p className="font-bold">{title}</p>
-                  {aiNote ? <p className="text-xs text-ink-soft">{aiNote}</p> : null}
-                </div>
-              </div>
-            ) : null}
-            {unsafe ? <Notice tone="error">We cannot help with this request. UseMe runners only do lawful, safe errands.</Notice> : null}
-            <h1 className="text-lg font-extrabold">{needsTo ? 'From and to' : 'Where should the runner go?'}</h1>
-            <PlaceField label={needsTo ? 'From' : 'Place'} dot="green" text={fromText} place={from} onText={(t) => onText('from', t)} onPlace={(p) => setFrom(p)} onPin={() => setPinning('from')} />
-            {needsTo ? <PlaceField label="To" dot="red" text={toText} place={to} onText={(t) => onText('to', t)} onPlace={(p) => setTo(p)} onPin={() => setPinning('to')} /> : null}
-            {error ? <Notice tone="error">{error}</Notice> : null}
-            <Button size="lg" fullWidth onClick={toDetails} disabled={unsafe}>Continue</Button>
-          </>
         ) : (
           <>
-            <div className="flex gap-2 overflow-x-auto pb-1" role="radiogroup" aria-label="Errand type">
-              {ERRAND_CATEGORIES.map((c) => (
-                <button key={c.id} type="button" role="radio" aria-checked={category === c.id} onClick={() => setCategory(c.id)} className={`shrink-0 rounded-full border-2 px-4 py-2 text-sm font-semibold ${category === c.id ? 'border-brand-red bg-brand-red-soft' : 'border-line'}`}>
-                  {c.shortLabel}
-                </button>
-              ))}
+            <div className="flex items-start gap-2 rounded-control bg-brand-yellow-soft p-3">
+              <Sparkles className="mt-0.5 size-5 shrink-0 text-brand-orange" aria-hidden="true" />
+              <div className="min-w-0 flex-1">
+                {editingTitle ? (
+                  <input autoFocus value={title} maxLength={80} onChange={(e) => setTitle(e.target.value)} onBlur={() => setEditingTitle(false)} aria-label="Heading for the runner" className="min-h-10 w-full rounded-control border-2 border-line bg-surface px-2 font-bold" />
+                ) : (
+                  <p className="font-bold">{title}</p>
+                )}
+                {summary ? <p className="mt-1 line-clamp-3 text-sm">{summary}</p> : null}
+                {aiNote ? <p className="mt-1 text-xs text-ink-soft">{aiNote}</p> : null}
+              </div>
+              <button type="button" onClick={() => setEditingTitle(true)} aria-label="Edit heading" className="grid size-10 shrink-0 place-items-center rounded-full hover:bg-black/5">
+                <Pencil className="size-4" aria-hidden="true" />
+              </button>
             </div>
-            <div className="grid grid-cols-5 gap-2" role="radiogroup" aria-label="Transport">
-              {TRANSPORT_TYPES.map((t) => (
-                <button key={t.id} type="button" role="radio" aria-checked={transport === t.id} onClick={() => setTransport(t.id)} className={`rounded-control border-2 px-1 py-2 text-xs font-bold ${transport === t.id ? 'border-brand-red bg-brand-red-soft' : 'border-line'}`}>
-                  {t.label}
-                </button>
-              ))}
-            </div>
-            {tooFar ? <Notice tone="warning">This trip is about {routeKm} km, longer than {getTransport(transport).label} runners cover ({getTransport(transport).maxKm} km). Pick another transport.</Notice> : null}
+            {unsafe ? <Notice tone="error">We cannot help with this request. UseMe runners only do lawful, safe errands.</Notice> : null}
 
-            <input className={field} placeholder="Heading for the runner" value={title} maxLength={80} onChange={(e) => setTitle(e.target.value)} aria-label="Heading for the runner" />
-            <textarea className={`${field} py-2`} rows={3} maxLength={600} placeholder="Details for the runner (items, quantities, who to ask for)" value={description} onChange={(e) => setDescription(e.target.value)} aria-label="Details for the runner" />
-            {cat.allowsBudget ? (
-              <input className={field} inputMode="numeric" placeholder="Shopping budget in naira (paid to the runner for items)" value={budget} onChange={(e) => setBudget(e.target.value)} aria-label="Shopping budget in naira" />
-            ) : null}
-            <div className="flex items-center gap-3 text-sm">
-              <label htmlFor="stops" className="text-ink-soft">Extra stops</label>
-              <select id="stops" className="min-h-11 rounded-control border-2 border-line bg-surface px-2" value={stops} onChange={(e) => setStops(Number(e.target.value))}>
-                {[0, 1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}</option>)}
-              </select>
-            </div>
-            <input className={field} placeholder="Other instructions (optional)" value={instructions} maxLength={400} onChange={(e) => setInstructions(e.target.value)} aria-label="Other instructions" />
+            <PlaceField label={needsTo ? 'From' : 'Where should the runner go?'} dot="green" text={fromText} place={from} onText={(t) => onText('from', t)} onPlace={(p) => setFrom(p)} onPin={() => setPinning('from')} />
+            <PlaceField label={needsTo ? 'To' : 'Deliver to (if needed)'} dot="red" text={toText} place={to} onText={(t) => onText('to', t)} onPlace={(p) => setTo(p)} onPin={() => setPinning('to')} />
 
             {quoteError ? <Notice tone="error">{quoteError}</Notice> : null}
             {error ? <Notice tone="error">{error}</Notice> : null}
 
             <div className="flex items-end justify-between rounded-control bg-brand-yellow-soft px-4 py-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">Fixed price</p>
-                <p className="text-2xl font-extrabold tabular-nums">{quote ? formatNaira(quote.suggested_fare_kobo) : '—'}</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">Service fee</p>
+                <p className="text-2xl font-extrabold tabular-nums">{quote && placesReady ? formatNaira(quote.suggested_fare_kobo) : '—'}</p>
               </div>
-              <p className="text-right text-xs text-ink-soft">
-                About {routeKm ?? '—'} km (estimated)
-                {budgetKobo > 0 ? <><br />+ {formatNaira(budgetKobo)} for items</> : null}
-              </p>
+              <p className="text-right text-xs text-ink-soft">{routeKm && placesReady ? `About ${routeKm} km (estimated)` : 'Choose the places to see the fee'}</p>
             </div>
-            <p className="text-xs text-ink-soft">The distance is estimated from the map until route lookup is connected. The price is set by the server and does not change after you request.</p>
+            <p className="text-xs text-ink-soft">This is the fixed service fee. If your errand needs more money, like paying for items, you agree that with your runner in the chat.</p>
 
-            <div className="flex gap-3">
-              <Button variant="secondary" size="lg" onClick={() => setStep('places')}>Places</Button>
-              <Button size="lg" fullWidth loading={posting} disabled={!ready} onClick={() => void request()}>
-                {quote ? `Request runner · ${formatNaira(quote.suggested_fare_kobo)}` : 'Request runner'}
-              </Button>
-            </div>
+            <Button size="lg" fullWidth loading={posting} disabled={!ready} onClick={() => void request()}>
+              {quote && placesReady ? `Find a runner · ${formatNaira(quote.suggested_fare_kobo)}` : 'Find a runner'}
+            </Button>
           </>
         )}
       </div>

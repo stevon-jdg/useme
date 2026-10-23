@@ -7,8 +7,9 @@ import { Card } from '@/components/ui/Card'
 import { Notice } from '@/components/ui/Notice'
 import { formatNaira } from '@/lib/formatting/money'
 import type { MapMarker } from '@/components/map/MapView'
+import { useAuth } from '@/features/auth/AuthProvider'
+import { ChatPanel } from './ChatPanel'
 import { useRealtimeRefresh } from '@/lib/supabase/useRealtime'
-import { getTransport } from './catalog'
 import {
   advanceDispatch, cancelErrand, fetchErrand, fetchMyRating, getErrandRunner, rateErrand, STATUS_LABEL, type Errand,
 } from './rideApi'
@@ -19,6 +20,7 @@ const LIVE = ['assigned', 'heading_to_pickup', 'arrived_at_pickup', 'in_progress
 
 export function TrackErrandPage() {
   const { id = '' } = useParams()
+  const { user } = useAuth()
   const queryClient = useQueryClient()
   const [actionError, setActionError] = useState<string | null>(null)
   const [cancelling, setCancelling] = useState(false)
@@ -107,6 +109,10 @@ export function TrackErrandPage() {
 
         {e.status !== 'searching' && e.status !== 'cancelled' && runner.data ? <RunnerCard runner={runner.data} /> : null}
 
+        {user && runner.data && e.status !== 'searching' && e.status !== 'cancelled' ? (
+          <ChatPanel errandId={e.id} meId={user.id} otherName={runner.data.name.split(' ')[0] ?? 'your runner'} open={LIVE.includes(e.status)} />
+        ) : null}
+
         {LIVE.includes(e.status) ? (
           <Card className="flex items-center justify-between bg-brand-yellow-soft">
             <div>
@@ -119,7 +125,7 @@ export function TrackErrandPage() {
 
         {e.status !== 'searching' ? (
           <div className="flex items-center justify-between text-sm">
-            <span className="text-ink-soft">{e.title} · {getTransport(e.transport_id).label}</span>
+            <span className="min-w-0 truncate text-ink-soft">{e.title}</span>
             <span className="font-bold tabular-nums">{formatNaira(e.agreed_fare_kobo ?? e.suggested_fare_kobo)}</span>
           </div>
         ) : null}

@@ -29,7 +29,7 @@ export type Errand = {
   status: ErrandStatus
   category_id: ErrandCategoryId
   title: string
-  transport_id: TransportId
+  transport_id: TransportId | null
   pickup_text: string
   pickup_area: string | null
   pickup_lat: number
@@ -58,7 +58,7 @@ export type AssignedRunner = {
   name: string
   phone: string | null
   tier: string
-  transport_id: TransportId
+  transport_id: TransportId | null
   plate_number: string | null
   rating_avg: number | null
   rating_count: number
@@ -72,29 +72,20 @@ export type PostErrandInput = {
   category: ErrandCategoryId
   title: string
   description: string
-  instructions: string
   pickupText: string
   pickupArea: string
   pickup: { lat: number; lng: number }
   destinationText: string
   destinationArea: string
   destination: { lat: number; lng: number } | null
-  transport: TransportId
   routeKm: number
-  extraStops: number
-  shoppingBudgetKobo: number
 }
 
 const COLUMNS =
   'id, status, category_id, title, transport_id, pickup_text, pickup_area, pickup_lat, pickup_lng, destination_text, destination_area, destination_lat, destination_lng, route_km, suggested_fare_kobo, agreed_fare_kobo, delivery_code, cancelled_reason, created_at'
 
-export function getQuote(category: ErrandCategoryId, transport: TransportId, km: number, extraStops: number) {
-  return callRpc<Quote>('calculate_quote', {
-    p_category: category,
-    p_transport: transport,
-    p_distance_km: km,
-    p_extra_stops: extraStops,
-  })
+export function getQuote(category: ErrandCategoryId, km: number) {
+  return callRpc<Quote>('calculate_standard_quote', { p_category: category, p_km: km })
 }
 
 export function postErrand(input: PostErrandInput) {
@@ -102,7 +93,6 @@ export function postErrand(input: PostErrandInput) {
     p_category_id: input.category,
     p_title: input.title,
     p_description: input.description || null,
-    p_instructions: input.instructions || null,
     p_pickup_text: input.pickupText,
     p_pickup_area: input.pickupArea,
     p_pickup_lat: input.pickup.lat,
@@ -111,10 +101,7 @@ export function postErrand(input: PostErrandInput) {
     p_destination_area: input.destination ? input.destinationArea : null,
     p_destination_lat: input.destination?.lat ?? null,
     p_destination_lng: input.destination?.lng ?? null,
-    p_transport_id: input.transport,
     p_route_km: input.routeKm,
-    p_extra_stops: input.extraStops,
-    p_shopping_budget_kobo: input.shoppingBudgetKobo,
   })
 }
 
@@ -150,3 +137,13 @@ export const STATUS_LABEL: Record<ErrandStatus, string> = {
   cancelled: 'Cancelled',
   disputed: 'Under review',
 }
+
+export type ChatMessage = { id: number; errand_id: string; sender_id: string; body: string; created_at: string; read_at: string | null }
+
+export async function fetchMessages(errandId: string): Promise<ChatMessage[]> {
+  return unwrap(
+    await db().from('errand_messages').select('id, errand_id, sender_id, body, created_at, read_at').eq('errand_id', errandId).order('id', { ascending: true }).limit(300),
+  ) as ChatMessage[]
+}
+export const sendMessage = (errandId: string, body: string) => callRpc<number>('send_errand_message', { p_errand: errandId, p_body: body })
+export const markMessagesRead = (errandId: string) => callRpc<void>('mark_messages_read', { p_errand: errandId })
