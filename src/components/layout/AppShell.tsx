@@ -16,7 +16,7 @@ export function AppShell({ items, area, topBar }: { items: NavItem[]; area: stri
   const { user, signOut, configured } = useAuth()
 
   return (
-    <div className="min-h-dvh md:grid md:grid-cols-[15rem_1fr]">
+    <div className="min-h-dvh md:grid md:grid-cols-[15rem_1fr]" style={{ ['--nav-h' as string]: 'calc(4rem + env(safe-area-inset-bottom))' }}>
       <aside className="hidden border-r border-line bg-surface p-4 md:flex md:flex-col">
         <Logo variant="stacked" />
         <p className="mt-6 text-xs font-semibold uppercase tracking-wide text-ink-soft">{area}</p>
@@ -49,7 +49,7 @@ export function AppShell({ items, area, topBar }: { items: NavItem[]; area: stri
         ) : null}
       </aside>
 
-      <div className="min-w-0">
+      <div className={`flex min-w-0 flex-col ${topBar ? 'h-dvh md:h-auto md:min-h-dvh' : ''}`}>
         {topBar ?? (
           <header className="flex items-center justify-between border-b border-line bg-surface px-4 py-3 md:hidden">
           <Logo />
@@ -67,11 +67,13 @@ export function AppShell({ items, area, topBar }: { items: NavItem[]; area: stri
         )}
 
         <main
-          className={`relative mx-auto w-full max-w-3xl space-y-4 px-4 pb-28 pt-5 md:pb-10 ${
-            topBar ? '-mt-8 overflow-hidden rounded-t-[2rem] bg-surface px-5 pt-8 md:mt-0 md:rounded-none md:px-4 md:pt-5' : ''
+          className={`relative mx-auto w-full max-w-3xl space-y-4 px-4 pt-5 md:pb-10 ${
+            topBar
+              ? 'flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden rounded-t-[1.75rem] bg-surface px-5 pb-[var(--nav-h)] pt-6 -mt-6 md:mt-0 md:block md:flex-none md:overflow-visible md:rounded-none md:px-4 md:pt-5'
+              : 'pb-28'
           }`}
         >
-          {topBar ? <MapLines className="pointer-events-none absolute inset-0 size-full text-black/[0.035] md:hidden" /> : null}
+          {topBar ? <MapLines className="pointer-events-none fixed inset-x-0 top-0 -z-0 size-full text-black/[0.035] md:hidden" /> : null}
           {!configured ? (
             <Notice tone="warning">
               Preview mode. The app is not connected to Supabase, so nothing here is saved and every screen uses sample

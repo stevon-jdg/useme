@@ -80,7 +80,7 @@ export function TrackErrandPage() {
   if (errand.error || !e) return <Notice tone="error">We could not load this errand.</Notice>
 
   return (
-    <div className="relative -mx-4 -my-4 flex h-[calc(100dvh-8.5rem)] min-h-[32rem] flex-col md:-mx-6 md:h-[calc(100dvh-3rem)]">
+    <div className="relative -mx-5 -mb-[var(--nav-h)] -mt-6 flex min-h-[30rem] flex-1 flex-col md:-mx-4 md:mb-0 md:mt-0 md:h-[calc(100dvh-3rem)] md:flex-none">
       <Suspense fallback={<div className="flex-1 bg-canvas" />}>
         <MapView className="flex-1" label="Map of your errand" center={{ lat: e.pickup_lat, lng: e.pickup_lng }} markers={markers} fitToMarkers={markers.length > 1} />
       </Suspense>

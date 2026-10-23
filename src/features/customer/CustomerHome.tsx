@@ -40,7 +40,7 @@ export function CustomerHome() {
   // Open errands first, then the most recent ones.
   const list = [...(errands.data ?? [])]
     .sort((a, b) => Number(OPEN_STATUSES.includes(b.status)) - Number(OPEN_STATUSES.includes(a.status)))
-    .slice(0, 4)
+    .slice(0, 2)
 
   function start() {
     const value = text.trim()
@@ -49,10 +49,10 @@ export function CustomerHome() {
   }
 
   return (
-    <div className="relative z-10 space-y-8">
-      <section aria-labelledby="need-heading" className="space-y-3">
-        <h2 id="need-heading" className="text-lg">Tell us what you need?</h2>
-        <div className="relative">
+    <div className="relative z-10 flex min-h-0 flex-1 flex-col gap-4 md:gap-6">
+      <section aria-labelledby="need-heading" className="flex min-h-0 shrink flex-col gap-2 md:flex-none">
+        <h2 id="need-heading" className="text-base font-medium">Tell us what you need?</h2>
+        <div className="relative min-h-24 flex-1 max-h-60 md:max-h-none md:flex-none">
           <textarea
             ref={box}
             value={text}
@@ -60,10 +60,10 @@ export function CustomerHome() {
             maxLength={600}
             placeholder={hint}
             aria-label="Describe your errand"
-            className="h-44 w-full resize-none rounded-2xl border-2 border-line bg-surface/90 p-4 pb-14 text-base placeholder:text-ink-soft/60 focus:border-brand-red focus:outline-none"
+            className="h-full min-h-24 w-full resize-none rounded-2xl border-2 border-line bg-surface/90 p-3 pb-12 text-base md:h-40 md:flex-none placeholder:text-ink-soft/60 focus:border-brand-red focus:outline-none"
           />
           {text.trim() ? (
-            <button type="button" onClick={start} className="absolute bottom-3 right-3 inline-flex min-h-11 items-center gap-2 rounded-full bg-brand-red px-5 font-semibold text-white hover:bg-brand-red-dark">
+            <button type="button" onClick={start} className="absolute bottom-2 right-2 inline-flex min-h-10 items-center gap-2 rounded-full bg-brand-red px-5 font-semibold text-white hover:bg-brand-red-dark">
               Continue
               <ArrowRight className="size-5" aria-hidden="true" />
             </button>
@@ -71,13 +71,13 @@ export function CustomerHome() {
         </div>
       </section>
 
-      <section aria-labelledby="quick-heading" className="space-y-3">
-        <h2 id="quick-heading" className="text-lg">Quick Actions</h2>
-        <ul className="grid grid-cols-4 gap-3">
+      <section aria-labelledby="quick-heading" className="shrink-0 space-y-2">
+        <h2 id="quick-heading" className="text-base font-medium">Quick Actions</h2>
+        <ul className="grid grid-cols-4 gap-2">
           {QUICK.map((q) => (
-            <li key={q.label}>
-              <button type="button" onClick={() => { setHint(EXAMPLE[q.type] ?? hint); box.current?.focus() }} className="flex h-24 w-full flex-col items-center justify-center gap-2 rounded-xl border border-ink/30 bg-surface/90 p-1 text-center text-[11px] leading-tight">
-                <q.icon className={`size-9 ${q.color}`} strokeWidth={1.6} aria-hidden="true" />
+            <li key={q.label} className="min-w-0">
+              <button type="button" onClick={() => { setHint(EXAMPLE[q.type] ?? hint); box.current?.focus() }} className="flex h-[4.5rem] w-full min-w-0 flex-col items-center justify-center gap-1 rounded-xl border border-ink/30 bg-surface/90 px-0.5 text-center text-[10.5px] leading-tight sm:h-20 sm:text-xs">
+                <q.icon className={`size-7 shrink-0 sm:size-8 ${q.color}`} strokeWidth={1.6} aria-hidden="true" />
                 {q.label}
               </button>
             </li>
@@ -85,10 +85,10 @@ export function CustomerHome() {
         </ul>
       </section>
 
-      <section aria-labelledby="errands-heading" className="space-y-3">
+      <section aria-labelledby="errands-heading" className="shrink-0 space-y-2">
         <div className="flex items-baseline justify-between">
-          <h2 id="errands-heading" className="text-lg">Your Errands</h2>
-          {(errands.data?.length ?? 0) > 4 ? <Link to="/app/history" className="text-sm font-semibold text-brand-red">View all</Link> : null}
+          <h2 id="errands-heading" className="text-base font-medium">Your Errands</h2>
+          {(errands.data?.length ?? 0) > 2 ? <Link to="/app/history" className="text-sm font-semibold text-brand-red">View all</Link> : null}
         </div>
         {!configured ? (
           <p className="rounded-xl border border-dashed border-line p-4 text-sm text-ink-soft">Connect Supabase to see your errands.</p>
@@ -103,12 +103,12 @@ export function CustomerHome() {
             const { icon: Icon, color } = CATEGORY_ICON[e.category_id]
             const open = OPEN_STATUSES.includes(e.status)
             return (
-              <Link key={e.id} to={`/app/errands/${e.id}`} className="flex items-center gap-4 rounded-xl border border-line bg-surface/95 px-4 py-5">
-                <Icon className={`size-10 shrink-0 ${color}`} strokeWidth={1.6} aria-hidden="true" />
+              <Link key={e.id} to={`/app/errands/${e.id}`} className="flex items-center gap-3 rounded-xl border border-line bg-surface/95 px-3 py-2.5">
+                <Icon className={`size-8 shrink-0 ${color}`} strokeWidth={1.6} aria-hidden="true" />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-lg">{e.title}</span>
+                  <span className="block truncate text-base leading-tight">{e.title}</span>
                   <span className="block text-xs text-ink-soft">{e.route_km ? `${e.route_km} km` : e.pickup_area ?? ''}{open ? ` · ${STATUS_LABEL[e.status]}` : e.status === 'cancelled' ? ' · Cancelled' : ''}</span>
-                  <span className="block text-lg font-semibold tabular-nums">{formatNaira(e.agreed_fare_kobo ?? e.suggested_fare_kobo)}</span>
+                  <span className="block text-base font-semibold tabular-nums leading-tight">{formatNaira(e.agreed_fare_kobo ?? e.suggested_fare_kobo)}</span>
                 </span>
               </Link>
             )

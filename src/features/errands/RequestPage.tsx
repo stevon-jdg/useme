@@ -194,7 +194,7 @@ export function RequestPage() {
   }
 
   return (
-    <div className="relative -mx-5 -mb-28 -mt-8 flex h-[calc(100dvh-4rem)] min-h-[34rem] flex-col md:-mx-4 md:mb-0 md:mt-0 md:h-[calc(100dvh-3rem)]">
+    <div className="relative -mx-5 -mb-[var(--nav-h)] -mt-6 flex min-h-[30rem] flex-1 flex-col md:-mx-4 md:mb-0 md:mt-0 md:h-[calc(100dvh-3rem)] md:flex-none">
       <Suspense fallback={<div className="grid flex-1 place-items-center bg-canvas text-ink-soft">Loading map…</div>}>
         <MapView
           className="min-h-40 flex-1"
