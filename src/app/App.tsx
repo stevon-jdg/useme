@@ -1,9 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import {
   Bike,
+  Flag,
   Home,
   LayoutDashboard,
   Package,
+  ScrollText,
   ShieldCheck,
   Tag,
   User,
@@ -37,6 +39,8 @@ const AdminBalancesPage = lazy(() => import('@/features/admin/AdminBalancesPage'
 const WalletPage = lazy(() => import('@/features/wallet/WalletPage').then((m) => ({ default: m.WalletPage })))
 const RunnerProfilePage = lazy(() => import('@/features/runner/RunnerProfilePage').then((m) => ({ default: m.RunnerProfilePage })))
 const AdminPricingPage = lazy(() => import('@/features/admin/AdminPricingPage').then((m) => ({ default: m.AdminPricingPage })))
+const AdminActivityPage = lazy(() => import('@/features/admin/AdminActivityPage').then((m) => ({ default: m.AdminActivityPage })))
+const AdminReportsPage = lazy(() => import('@/features/admin/AdminReportsPage').then((m) => ({ default: m.AdminReportsPage })))
 const AdminRunnersPage = lazy(() => import('@/features/admin/AdminRunnersPage').then((m) => ({ default: m.AdminRunnersPage })))
 
 const queryClient = new QueryClient({
@@ -68,8 +72,10 @@ const adminItems: NavItem[] = [
   { to: '/admin', label: 'Overview', icon: ShieldCheck, end: true },
   { to: '/admin/runners', label: 'Runners', icon: Users },
   { to: '/admin/errands', label: 'Errands', icon: Package },
+  { to: '/admin/reports', label: 'Reports', icon: Flag },
   { to: '/admin/balances', label: 'Balances', icon: Wallet },
   { to: '/admin/pricing', label: 'Pricing', icon: Tag },
+  { to: '/admin/activity', label: 'Activity', icon: ScrollText },
   customerItem,
 ]
 
@@ -130,8 +136,10 @@ export function App() {
                     <Route index element={<AdminHome />} />
                     <Route path="runners" element={<AdminRunnersPage />} />
                     <Route path="errands" element={<AdminErrandsPage />} />
+                    <Route path="reports" element={<AdminReportsPage />} />
                     <Route path="balances" element={<AdminBalancesPage />} />
                     <Route path="pricing" element={<AdminPricingPage />} />
+                    <Route path="activity" element={<AdminActivityPage />} />
                   </Route>
                 </Route>
               </Route>

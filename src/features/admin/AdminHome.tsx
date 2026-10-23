@@ -4,9 +4,7 @@ import { ButtonLink } from '@/components/ui/Button'
 import { Notice } from '@/components/ui/Notice'
 
 const planned = [
-  'Disputes and support tickets',
   'Service area configuration',
-  'Audit log',
 ]
 
 export function AdminHome() {
@@ -27,6 +25,11 @@ export function AdminHome() {
         <ButtonLink to="/admin/errands">Open errands</ButtonLink>
       </Card>
       <Card className="space-y-3">
+        <h2 className="font-bold">Reports</h2>
+        <p className="text-sm text-ink-soft">Problems reported by customers and runners. Resolve each with a note.</p>
+        <ButtonLink to="/admin/reports">Open reports</ButtonLink>
+      </Card>
+      <Card className="space-y-3">
         <h2 className="font-bold">Runner balances</h2>
         <p className="text-sm text-ink-soft">Record the fees runners hand over from cash errands.</p>
         <ButtonLink to="/admin/balances">Open balances</ButtonLink>
@@ -35,6 +38,11 @@ export function AdminHome() {
         <h2 className="font-bold">Pricing</h2>
         <p className="text-sm text-ink-soft">Set the base fee, per-kilometre rate, task fees and UseMe's cut.</p>
         <ButtonLink to="/admin/pricing">Open pricing</ButtonLink>
+      </Card>
+      <Card className="space-y-3">
+        <h2 className="font-bold">Activity</h2>
+        <p className="text-sm text-ink-soft">See who changed prices and who recorded runner payments.</p>
+        <ButtonLink to="/admin/activity">Open activity</ButtonLink>
       </Card>
       <Card>
         <h2 className="font-bold">Planned for Phase 8</h2>

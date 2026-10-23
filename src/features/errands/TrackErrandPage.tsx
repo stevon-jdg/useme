@@ -8,6 +8,7 @@ import { Notice } from '@/components/ui/Notice'
 import { formatNaira } from '@/lib/formatting/money'
 import type { MapMarker } from '@/components/map/MapView'
 import { useAuth } from '@/features/auth/AuthProvider'
+import { ReportProblem } from '@/features/support/ReportProblem'
 import { ChatPanel } from './ChatPanel'
 import { useRealtimeRefresh } from '@/lib/supabase/useRealtime'
 import {
@@ -112,6 +113,8 @@ export function TrackErrandPage() {
         {user && runner.data && e.status !== 'searching' && e.status !== 'cancelled' ? (
           <ChatPanel errandId={e.id} meId={user.id} otherName={runner.data.name.split(' ')[0] ?? 'your runner'} open={LIVE.includes(e.status)} />
         ) : null}
+
+        {runner.data && e.status !== 'searching' && e.status !== 'cancelled' ? <ReportProblem errandId={e.id} /> : null}
 
         {LIVE.includes(e.status) ? (
           <Card className="flex items-center justify-between bg-brand-yellow-soft">

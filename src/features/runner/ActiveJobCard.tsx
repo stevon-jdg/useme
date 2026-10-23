@@ -8,6 +8,7 @@ import { formatNaira } from '@/lib/formatting/money'
 import type { MapMarker } from '@/components/map/MapView'
 import { useAuth } from '@/features/auth/AuthProvider'
 import { ChatPanel } from '@/features/errands/ChatPanel'
+import { ReportProblem } from '@/features/support/ReportProblem'
 import { advanceErrand, completeErrand, getRunnerJob, releaseErrand } from './dispatchApi'
 
 const MapView = lazy(() => import('@/components/map/MapView').then((m) => ({ default: m.MapView })))
@@ -112,6 +113,7 @@ export function ActiveJobCard({ errandId, onDone }: { errandId: string; onDone: 
         ) : null}
       </Card>
       {user ? <ChatPanel errandId={errandId} meId={user.id} otherName={j.customer_name || 'customer'} open={!j.assignment_ended} /> : null}
+      <ReportProblem errandId={errandId} />
       {error ? <Notice tone="error">{error}</Notice> : null}
 
       {next ? (
