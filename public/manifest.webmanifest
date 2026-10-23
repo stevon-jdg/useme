@@ -1,0 +1,11 @@
+{
+  "name": "UseMe Courier Service",
+  "short_name": "UseMe",
+  "description": "Your Errand. Our Runner.",
+  "start_url": "/app",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#171717",
+  "theme_color": "#171717",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

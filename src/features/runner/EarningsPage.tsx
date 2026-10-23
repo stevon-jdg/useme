@@ -4,12 +4,15 @@ import { Notice } from '@/components/ui/Notice'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useAuth } from '@/features/auth/AuthProvider'
 import { formatNaira } from '@/lib/formatting/money'
+import { fetchWallet } from '@/features/wallet/walletApi'
 import { fetchEarnings } from './dispatchApi'
 
 export function EarningsPage() {
   const { configured } = useAuth()
   const q = useQuery({ queryKey: ['earnings'], queryFn: fetchEarnings, enabled: configured })
   const e = q.data
+  const wq = useQuery({ queryKey: ['wallet'], queryFn: fetchWallet, enabled: configured })
+  const owed = wq.data?.runner_owed_kobo ?? 0
 
   const rows = [
     { label: 'Today', value: formatNaira(e?.today_net_kobo ?? 0), sub: `${e?.today_jobs ?? 0} errands` },
@@ -30,11 +33,18 @@ export function EarningsPage() {
           <p className="text-2xl font-extrabold tabular-nums">{r.value}</p>
         </Card>
       ))}
+      <Card className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-ink-soft">You owe UseMe</p>
+          <p className="text-xs text-ink-soft">Fees from cash errands. Hand it over to an admin.</p>
+        </div>
+        <p className="text-2xl font-extrabold tabular-nums">{formatNaira(owed)}</p>
+      </Card>
       <Card>
         <p className="text-sm text-ink-soft">Rating</p>
         <p className="text-xl font-extrabold">{e?.rating_avg ? `${e.rating_avg} ★ from ${e.rating_count} rating${e.rating_count === 1 ? '' : 's'}` : 'No ratings yet'}</p>
       </Card>
-      <Notice tone="info">Customers pay cash for now. The fee UseMe takes is tracked, and payouts and fee settlement come with the payments phase.</Notice>
+      <Notice tone="info">Customers pay you in cash, so you keep it and owe UseMe its fee. An admin records each payment you hand over.</Notice>
     </div>
   )
 }

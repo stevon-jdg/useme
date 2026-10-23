@@ -10,6 +10,7 @@ import { accountKey, useAccount } from '@/features/account/useAccount'
 import { useAuth } from '@/features/auth/AuthProvider'
 import { useRealtimeRefresh } from '@/lib/supabase/useRealtime'
 import { formatNaira } from '@/lib/formatting/money'
+import { PushToggle } from '@/features/notifications/PushToggle'
 import { ActiveJobCard } from './ActiveJobCard'
 import { fetchActiveErrandId, fetchEarnings } from './dispatchApi'
 import { IncomingRequestCard } from './IncomingRequestCard'
@@ -68,6 +69,7 @@ export function RunnerDashboard() {
     <div className="space-y-5">
       <PageHeader title="Runner" subtitle="Go online to get requests near you." />
       {!configured ? <DemoBanner>Not connected to Supabase. Going online needs the database.</DemoBanner> : null}
+      {configured ? <PushToggle audience="runner" /> : null}
       {error ? <Notice tone="error">{error}</Notice> : null}
 
       {activeId ? (

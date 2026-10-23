@@ -1,6 +1,7 @@
 import { Briefcase, LogOut, ShieldCheck } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Card } from '@/components/ui/Card'
+import { PushToggle } from '@/features/notifications/PushToggle'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Button } from '@/components/ui/Button'
 import { isAdminRole, useAccount } from '@/features/account/useAccount'
@@ -14,6 +15,7 @@ export function AccountPage() {
   return (
     <div className="space-y-4">
       <PageHeader title="Profile" />
+      <PushToggle audience="customer" />
       <Card className="flex items-center gap-4">
         <div className="grid size-16 place-items-center rounded-full bg-brand-yellow text-2xl font-extrabold" aria-hidden="true">
           {(account?.fullName ?? user?.email ?? 'U').slice(0, 1).toUpperCase()}

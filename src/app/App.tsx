@@ -3,6 +3,7 @@ import {
   Bike,
   Home,
   LayoutDashboard,
+  Package,
   ShieldCheck,
   User,
   Users,
@@ -31,6 +32,9 @@ const TrackErrandPage = lazy(() => import('@/features/errands/TrackErrandPage').
 const RunnerApplyPage = lazy(() => import('@/features/runner/RunnerApplyPage').then((m) => ({ default: m.RunnerApplyPage })))
 const RunnerDashboard = lazy(() => import('@/features/runner/RunnerDashboard').then((m) => ({ default: m.RunnerDashboard })))
 const AdminHome = lazy(() => import('@/features/admin/AdminHome').then((m) => ({ default: m.AdminHome })))
+const AdminErrandsPage = lazy(() => import('@/features/admin/AdminErrandsPage').then((m) => ({ default: m.AdminErrandsPage })))
+const AdminBalancesPage = lazy(() => import('@/features/admin/AdminBalancesPage').then((m) => ({ default: m.AdminBalancesPage })))
+const WalletPage = lazy(() => import('@/features/wallet/WalletPage').then((m) => ({ default: m.WalletPage })))
 const AdminRunnersPage = lazy(() => import('@/features/admin/AdminRunnersPage').then((m) => ({ default: m.AdminRunnersPage })))
 
 const queryClient = new QueryClient({
@@ -61,6 +65,8 @@ const runnerItems: NavItem[] = [
 const adminItems: NavItem[] = [
   { to: '/admin', label: 'Overview', icon: ShieldCheck, end: true },
   { to: '/admin/runners', label: 'Runners', icon: Users },
+  { to: '/admin/errands', label: 'Errands', icon: Package },
+  { to: '/admin/balances', label: 'Balances', icon: Wallet },
   customerItem,
 ]
 
@@ -104,7 +110,7 @@ export function App() {
                   <Route path="errands/:id" element={<TrackErrandPage />} />
                   <Route path="runner-application" element={<RunnerApplyPage />} />
                   <Route path="history" element={<HistoryPage />} />
-                  <Route path="wallet" element={<ComingSoon title="Wallet" phase="Phase 7" />} />
+                  <Route path="wallet" element={<WalletPage />} />
                   <Route path="account" element={<AccountPage />} />
                 </Route>
 
@@ -120,6 +126,8 @@ export function App() {
                   <Route path="/admin" element={<AppShell items={adminItems} area="Admin" />}>
                     <Route index element={<AdminHome />} />
                     <Route path="runners" element={<AdminRunnersPage />} />
+                    <Route path="errands" element={<AdminErrandsPage />} />
+                    <Route path="balances" element={<AdminBalancesPage />} />
                   </Route>
                 </Route>
               </Route>
