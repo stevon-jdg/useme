@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { ArrowRight, Briefcase, Package, ShoppingBasket, ShoppingCart, ClipboardList, type LucideIcon } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/features/auth/AuthProvider'
 import { type ErrandCategoryId } from '@/features/errands/catalog'
@@ -14,13 +14,6 @@ const QUICK: { label: string; type: ErrandCategoryId; icon: LucideIcon; color: s
   { label: 'Personal', type: 'custom', icon: Briefcase, color: 'text-[#43b02a]' },
 ]
 
-const EXAMPLE: Record<string, string> = {
-  pickup_delivery: 'e.g. Pick up a parcel from Roadblock Park and deliver it to Sabon Gari',
-  shopping: 'e.g. Buy a phone charger from the electronics shop in the main market',
-  market_run: 'e.g. Buy tomatoes and pepper at the market and bring them to my house',
-  custom: 'e.g. Queue at the bank for me, or any other personal errand',
-}
-
 const CATEGORY_ICON: Record<ErrandCategoryId, { icon: LucideIcon; color: string }> = {
   pickup_delivery: { icon: Package, color: 'text-brand-orange' },
   shopping: { icon: ShoppingCart, color: 'text-[#3d9be9]' },
@@ -33,8 +26,6 @@ export function CustomerHome() {
   const { configured } = useAuth()
   const navigate = useNavigate()
   const [text, setText] = useState('')
-  const [hint, setHint] = useState('Describe your errand here...')
-  const box = useRef<HTMLTextAreaElement>(null)
   const errands = useQuery({ queryKey: ['my-errands'], queryFn: fetchMyErrands, enabled: configured, refetchInterval: 15000 })
 
   // Open errands first, then the most recent ones.
@@ -54,11 +45,10 @@ export function CustomerHome() {
         <h2 id="need-heading" className="text-base font-medium">Tell us what you need?</h2>
         <div className="relative min-h-24 flex-1 max-h-60 md:max-h-none md:flex-none">
           <textarea
-            ref={box}
             value={text}
             onChange={(e) => setText(e.target.value)}
             maxLength={600}
-            placeholder={hint}
+            placeholder="Describe your errand here..."
             aria-label="Describe your errand"
             className="h-full min-h-24 w-full resize-none rounded-2xl border-2 border-line bg-surface/90 p-3 pb-12 text-base md:h-40 md:flex-none placeholder:text-ink-soft/60 focus:border-brand-red focus:outline-none"
           />
@@ -76,7 +66,7 @@ export function CustomerHome() {
         <ul className="grid grid-cols-4 gap-2">
           {QUICK.map((q) => (
             <li key={q.label} className="min-w-0">
-              <button type="button" onClick={() => { setHint(EXAMPLE[q.type] ?? hint); box.current?.focus() }} className="flex h-[4.5rem] w-full min-w-0 flex-col items-center justify-center gap-1 rounded-xl border border-ink/30 bg-surface/90 px-0.5 text-center text-[10.5px] leading-tight sm:h-20 sm:text-xs">
+              <button type="button" onClick={() => navigate(`/app/errands/new?type=${q.type}`, { state: text.trim() ? { text: text.trim() } : undefined })} className="flex h-[4.5rem] w-full min-w-0 flex-col items-center justify-center gap-1 rounded-xl border border-ink/30 bg-surface/90 px-0.5 text-center text-[10.5px] leading-tight sm:h-20 sm:text-xs">
                 <q.icon className={`size-7 shrink-0 sm:size-8 ${q.color}`} strokeWidth={1.6} aria-hidden="true" />
                 {q.label}
               </button>

@@ -89,3 +89,15 @@ export async function searchPlaces(query: string, signal?: AbortSignal): Promise
   if (!res.ok) throw new Error('Place search is unavailable right now.')
   return mapPhoton(await res.json())
 }
+
+/** Names a spot on the map from its coordinates, so a runner sees a street or area and not "Pinned location". Returns null on any failure. */
+export async function reverseGeocode(lat: number, lng: number, signal?: AbortSignal): Promise<Place | null> {
+  try {
+    const res = await fetch(`https://photon.komoot.io/reverse?lat=${lat}&lon=${lng}&lang=en`, { signal })
+    if (!res.ok) return null
+    const found = mapPhoton((await res.json()) as { features?: PhotonFeature[] })[0]
+    return found ? { ...found, lat, lng } : null
+  } catch {
+    return null
+  }
+}

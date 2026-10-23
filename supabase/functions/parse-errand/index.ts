@@ -24,6 +24,10 @@ Reply with ONLY one JSON object, no markdown, with these keys:
 - extra_stops: whole number of additional stops beyond pickup and destination, 0 if none.
 - budget_naira: money the customer says the runner should spend on items, as a whole number of naira, or null.
 - unsafe: true if the request is illegal, harmful, or asks to move prohibited items (weapons, drugs, stolen goods), otherwise false.
+Place rules, because the customer may not know street names:
+- Copy a place the way the customer said it, keeping landmark words ("Roadblock park", "main market", "near the Total filling station"). Do not translate or correct local names. Do not add a city.
+- If the customer means their own home, shop, office or where they are now ("my house", "my place", "here", "me"), return exactly MY_LOCATION for that place.
+- Pickup is where the runner collects or buys. Destination is where it is delivered. "Buy X at the market and bring to my house" gives pickup "the market" and destination MY_LOCATION.
 Never guess a place the customer did not mention.`
 
 function clean(value: unknown, max: number): string | null {

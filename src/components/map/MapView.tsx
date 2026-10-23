@@ -46,12 +46,14 @@ type Props = {
   centerPin?: MapMarker['kind'] | null
   /** Fit the view to these markers whenever they change. */
   fitToMarkers?: boolean
+  /** False makes a preview that cannot be dragged, so it never traps a finger that is scrolling the page. */
+  interactive?: boolean
   className?: string
   label: string
 }
 
 /** Leaflet map. All the Leaflet code lives here so the rest of the app never touches it. */
-export function MapView({ center, zoom = 14, markers = [], onCenterChange, centerPin = null, fitToMarkers = false, className, label }: Props) {
+export function MapView({ center, zoom = 14, markers = [], onCenterChange, centerPin = null, fitToMarkers = false, interactive = true, className, label }: Props) {
   const host = useRef<HTMLDivElement>(null)
   const map = useRef<L.Map | null>(null)
   const layer = useRef<L.LayerGroup | null>(null)
@@ -60,9 +62,18 @@ export function MapView({ center, zoom = 14, markers = [], onCenterChange, cente
 
   useEffect(() => {
     if (!host.current || map.current) return
-    const instance = L.map(host.current, { zoomControl: false, attributionControl: true }).setView([center.lat, center.lng], zoom)
+    const instance = L.map(host.current, {
+      zoomControl: false,
+      attributionControl: true,
+      dragging: interactive,
+      touchZoom: interactive,
+      scrollWheelZoom: interactive,
+      doubleClickZoom: interactive,
+      boxZoom: interactive,
+      keyboard: interactive,
+    }).setView([center.lat, center.lng], zoom)
     L.tileLayer(TILE_URL, { maxZoom: 19, attribution: ATTRIBUTION }).addTo(instance)
-    L.control.zoom({ position: 'topright' }).addTo(instance)
+    if (interactive) L.control.zoom({ position: 'topright' }).addTo(instance)
     layer.current = L.layerGroup().addTo(instance)
     instance.on('moveend', () => {
       const c = instance.getCenter()
