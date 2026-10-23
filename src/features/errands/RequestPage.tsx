@@ -1,4 +1,4 @@
-import { Loader2, MapPin, Pencil, Sparkles, X } from 'lucide-react'
+import { Loader2, Pencil, Sparkles, X } from 'lucide-react'
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
@@ -46,10 +46,11 @@ export function RequestPage() {
 
   const [text, setText] = useState(typed)
   const [aiCategory, setAiCategory] = useState<ErrandCategoryId | null>(null)
-  const [reading, setReading] = useState(false)
-  const [lastRead, setLastRead] = useState('')
+  const [stage, setStage] = useState<'describe' | 'reading' | 'ready'>(typed ? 'reading' : 'describe')
   const [title, setTitle] = useState('')
-  const [editingTitle, setEditingTitle] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [draftTitle, setDraftTitle] = useState('')
+  const [draftText, setDraftText] = useState('')
   const [summary, setSummary] = useState('')
   const [aiNote, setAiNote] = useState<string | null>(null)
   const [unsafe, setUnsafe] = useState(false)
@@ -106,19 +107,19 @@ export function RequestPage() {
     }
   }
 
-  async function read(input: string) {
+  async function read(input: string, keepTitle?: string) {
     const value = input.trim()
     if (value.length < 3) return
-    setReading(true)
+    setStage('reading')
     setError(null)
     const parsed = await parseErrand(value)
-    setLastRead(value)
+    setText(value)
     setAiCategory(parsed.category)
-    setTitle(parsed.title)
+    setTitle(keepTitle || parsed.title)
     setSummary(parsed.summary !== parsed.title ? parsed.summary : '')
     setUnsafe(parsed.unsafe)
     setAiNote(parsed.source === 'ai' ? 'Written for the runner from your message.' : 'Taken from your message. You can change it.')
-    setReading(false)
+    setStage('ready')
     await Promise.all([fill('from', parsed.pickupText, parsed.pickupIsMe), fill('to', parsed.destinationText, parsed.destinationIsMe)])
   }
 
@@ -249,7 +250,24 @@ export function RequestPage() {
     setPinning(null)
   }
 
-  const dirty = text.trim().length >= 8 && text.trim() !== lastRead
+  function startEdit() {
+    setDraftTitle(title)
+    setDraftText(text)
+    setEditing(true)
+  }
+
+  function finishEdit() {
+    setEditing(false)
+    const nextText = draftText.trim()
+    const nextTitle = draftTitle.trim()
+    if (nextText.length >= 3 && nextText !== text.trim()) {
+      // The details changed, so read them again. A heading the person typed themselves is kept.
+      void read(nextText, nextTitle !== title ? nextTitle : undefined)
+    } else if (nextTitle.length >= 3) {
+      setTitle(nextTitle)
+    }
+  }
+
   const ready = quote !== null && text.trim().length >= 3 && placesReady && !unsafe
 
   async function request() {
@@ -278,114 +296,124 @@ export function RequestPage() {
   }
 
   return (
-    <div className="relative z-10 space-y-4">
-      <section className="space-y-2" aria-labelledby="describe-heading">
-        <h2 id="describe-heading" className="text-base font-medium">What should the runner do?</h2>
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          maxLength={600}
-          rows={3}
-          placeholder={PLACEHOLDER[category]}
-          aria-label="Describe your errand"
-          className="w-full resize-none rounded-2xl border-2 border-line bg-surface/90 p-3 text-base placeholder:text-ink-soft/60 focus:border-brand-red focus:outline-none"
-        />
-        {reading ? (
-          <p className="flex items-center gap-2 text-sm font-semibold" role="status">
-            <Loader2 className="size-4 animate-spin text-brand-red" aria-hidden="true" />
-            Reading your request and finding the places…
-          </p>
-        ) : dirty ? (
-          <Button variant="secondary" fullWidth onClick={() => void read(text)}>
-            <Sparkles className="size-4" aria-hidden="true" />
-            Find the places for me
+    <div className="relative z-10 -mx-5 -mb-[var(--nav-h)] -mt-6 flex min-h-0 flex-1 flex-col md:-mx-4 md:mb-0 md:mt-0 md:h-[calc(100dvh-3rem)] md:flex-none">
+      <div className="h-[30%] min-h-28 max-h-64 shrink-0 overflow-hidden bg-canvas md:h-56 md:rounded-2xl">
+        <Suspense fallback={<div className="grid size-full place-items-center text-sm text-ink-soft">Loading map…</div>}>
+          <MapView className="size-full" label="Map of your errand route" center={center} markers={markers} fitToMarkers={markers.length > 0} interactive={false} />
+        </Suspense>
+      </div>
+
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 pb-4 pt-4 md:px-0">
+        {stage === 'describe' ? (
+          <section className="space-y-2" aria-labelledby="describe-heading">
+            <h2 id="describe-heading" className="text-base font-medium">What should the runner do?</h2>
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              maxLength={600}
+              rows={4}
+              autoFocus
+              placeholder={PLACEHOLDER[category]}
+              aria-label="Describe your errand"
+              className="w-full resize-none rounded-2xl border-2 border-line bg-surface/90 p-3 text-base placeholder:text-ink-soft/60 focus:border-brand-red focus:outline-none"
+            />
+            <p className="text-xs text-ink-soft">Say what you need and where, in your own words. We will find the places for you.</p>
+          </section>
+        ) : stage === 'reading' ? (
+          <div className="flex items-center gap-3 py-8" role="status">
+            <Loader2 className="size-6 animate-spin text-brand-red" aria-hidden="true" />
+            <p className="font-semibold">Reading your request and finding the places…</p>
+          </div>
+        ) : (
+          <>
+            <div className="rounded-control bg-brand-yellow-soft p-3">
+              {editing ? (
+                <div className="space-y-2">
+                  <label className="block space-y-1 text-sm font-semibold">
+                    Heading for the runner
+                    <input value={draftTitle} maxLength={80} onChange={(e) => setDraftTitle(e.target.value)} className="min-h-11 w-full rounded-control border-2 border-line bg-surface px-3 font-bold" />
+                  </label>
+                  <label className="block space-y-1 text-sm font-semibold">
+                    What should the runner do?
+                    <textarea value={draftText} maxLength={600} rows={4} onChange={(e) => setDraftText(e.target.value)} className="w-full resize-none rounded-control border-2 border-line bg-surface p-3 text-base font-normal" />
+                  </label>
+                  <p className="text-xs text-ink-soft">If you change the details, we read them again and update the places you have not edited.</p>
+                  <Button fullWidth onClick={finishEdit}>Done</Button>
+                </div>
+              ) : (
+                <div className="flex items-start gap-2">
+                  <Sparkles className="mt-0.5 size-5 shrink-0 text-brand-orange" aria-hidden="true" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold">{title}</p>
+                    {summary ? <p className="mt-1 line-clamp-2 text-sm">{summary}</p> : null}
+                    {aiNote ? <p className="mt-1 text-xs text-ink-soft">{aiNote}</p> : null}
+                  </div>
+                  <button type="button" onClick={startEdit} aria-label="Edit the errand" className="grid size-11 shrink-0 place-items-center rounded-full hover:bg-black/5">
+                    <Pencil className="size-4" aria-hidden="true" />
+                  </button>
+                </div>
+              )}
+            </div>
+            {unsafe ? <Notice tone="error">We cannot help with this request. UseMe runners only do lawful, safe errands.</Notice> : null}
+
+            <section aria-label="Route" className="relative space-y-3 rounded-2xl border-2 border-line bg-surface/90 p-3">
+              <span className="absolute bottom-12 left-[1.2rem] top-12 w-px bg-line" aria-hidden="true" />
+              <PlaceField
+                label="From"
+                dot="green"
+                text={fromText}
+                place={from}
+                placeholder="Where does it start?"
+                alternatives={alts.from}
+                offerMyLocation={wantsMe.from || !from}
+                locating={locating === 'from'}
+                onText={(t) => onText('from', t)}
+                onPlace={(p) => onPlace('from', p)}
+                onPin={() => openPin('from')}
+                onUseMyLocation={() => void useMyLocation('from')}
+              />
+              <div className="ml-6 border-t border-line" />
+              <PlaceField
+                label={needsTo ? 'To' : 'To (only if something must be delivered)'}
+                dot="red"
+                text={toText}
+                place={to}
+                placeholder="Where should it go?"
+                alternatives={alts.to}
+                offerMyLocation={wantsMe.to}
+                locating={locating === 'to'}
+                onText={(t) => onText('to', t)}
+                onPlace={(p) => onPlace('to', p)}
+                onPin={() => openPin('to')}
+                onUseMyLocation={() => void useMyLocation('to')}
+              />
+            </section>
+            {locationError ? <Notice tone="warning">{locationError}</Notice> : null}
+            <p className="text-xs text-ink-soft">The fee is fixed. If your errand needs more money, like paying for items, you agree that with your runner in the chat.</p>
+            {quoteError ? <Notice tone="error">{quoteError}</Notice> : null}
+            {error ? <Notice tone="error">{error}</Notice> : null}
+          </>
+        )}
+      </div>
+
+      <div className="shrink-0 border-t border-line bg-surface px-5 pt-3 pb-[calc(var(--nav-h)+0.75rem)] md:px-0 md:pb-3">
+        {stage === 'ready' ? (
+          <div className="flex items-center gap-3">
+            <div className="shrink-0">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-ink-soft">Service fee</p>
+              <p className="text-xl font-extrabold leading-tight tabular-nums">{quote && placesReady ? formatNaira(quote.suggested_fare_kobo) : '—'}</p>
+              <p className="text-[10px] text-ink-soft">{routeKm && placesReady ? `About ${routeKm} km` : 'Pick the places'}</p>
+            </div>
+            <Button size="lg" fullWidth loading={posting} disabled={!ready || editing} onClick={() => void request()}>
+              Find a runner
+            </Button>
+          </div>
+        ) : (
+          <Button size="lg" fullWidth loading={stage === 'reading'} disabled={stage === 'reading' || text.trim().length < 3} onClick={() => void read(text)}>
+            <Sparkles className="size-5" aria-hidden="true" />
+            Continue
           </Button>
-        ) : null}
-      </section>
-
-      {title && !reading ? (
-        <div className="flex items-start gap-2 rounded-control bg-brand-yellow-soft p-3">
-          <Sparkles className="mt-0.5 size-5 shrink-0 text-brand-orange" aria-hidden="true" />
-          <div className="min-w-0 flex-1">
-            {editingTitle ? (
-              <input autoFocus value={title} maxLength={80} onChange={(e) => setTitle(e.target.value)} onBlur={() => setEditingTitle(false)} aria-label="Heading for the runner" className="min-h-10 w-full rounded-control border-2 border-line bg-surface px-2 font-bold" />
-            ) : (
-              <p className="font-bold">{title}</p>
-            )}
-            {summary ? <p className="mt-1 line-clamp-3 text-sm">{summary}</p> : null}
-            {aiNote ? <p className="mt-1 text-xs text-ink-soft">{aiNote}</p> : null}
-          </div>
-          <button type="button" onClick={() => setEditingTitle(true)} aria-label="Edit heading" className="grid size-10 shrink-0 place-items-center rounded-full hover:bg-black/5">
-            <Pencil className="size-4" aria-hidden="true" />
-          </button>
-        </div>
-      ) : null}
-      {unsafe ? <Notice tone="error">We cannot help with this request. UseMe runners only do lawful, safe errands.</Notice> : null}
-
-      <section aria-label="Route" className="relative space-y-3 rounded-2xl border-2 border-line bg-surface/90 p-3">
-        <span className="absolute bottom-12 left-[1.2rem] top-12 w-px bg-line" aria-hidden="true" />
-        <PlaceField
-          label="From"
-          dot="green"
-          text={fromText}
-          place={from}
-          placeholder="Where does it start?"
-          alternatives={alts.from}
-          offerMyLocation={wantsMe.from || !from}
-          locating={locating === 'from'}
-          onText={(t) => onText('from', t)}
-          onPlace={(p) => onPlace('from', p)}
-          onPin={() => openPin('from')}
-          onUseMyLocation={() => void useMyLocation('from')}
-        />
-        <div className="ml-6 border-t border-line" />
-        <PlaceField
-          label={needsTo ? 'To' : 'To (only if something must be delivered)'}
-          dot="red"
-          text={toText}
-          place={to}
-          placeholder="Where should it go?"
-          alternatives={alts.to}
-          offerMyLocation={wantsMe.to}
-          locating={locating === 'to'}
-          onText={(t) => onText('to', t)}
-          onPlace={(p) => onPlace('to', p)}
-          onPin={() => openPin('to')}
-          onUseMyLocation={() => void useMyLocation('to')}
-        />
-      </section>
-      {locationError ? <Notice tone="warning">{locationError}</Notice> : null}
-
-      {markers.length > 0 ? (
-        <div className="overflow-hidden rounded-2xl border border-line">
-          <Suspense fallback={<div className="grid h-44 place-items-center bg-canvas text-sm text-ink-soft">Loading map…</div>}>
-            <MapView className="h-44" label="Map of your errand route" center={center} markers={markers} fitToMarkers interactive={false} />
-          </Suspense>
-        </div>
-      ) : (
-        <div className="grid h-24 place-items-center rounded-2xl border border-dashed border-line text-center text-sm text-ink-soft">
-          <span className="flex items-center gap-2">
-            <MapPin className="size-4" aria-hidden="true" />
-            Your route will show here
-          </span>
-        </div>
-      )}
-      <p className="text-xs text-ink-soft">The fee is fixed. If your errand needs more money, like paying for items, you agree that with your runner in the chat.</p>
-
-      {quoteError ? <Notice tone="error">{quoteError}</Notice> : null}
-      {error ? <Notice tone="error">{error}</Notice> : null}
-
-      <div className="sticky bottom-[var(--nav-h)] z-20 -mx-5 space-y-2 border-t border-line bg-surface px-5 py-3 md:bottom-0 md:-mx-4 md:px-4">
-        <div className="flex items-end justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">Service fee</p>
-            <p className="text-2xl font-extrabold tabular-nums">{quote && placesReady ? formatNaira(quote.suggested_fare_kobo) : '—'}</p>
-          </div>
-          <p className="text-right text-xs text-ink-soft">{routeKm && placesReady ? `About ${routeKm} km (estimated)` : 'Choose the places to see the fee'}</p>
-        </div>
-        <Button size="lg" fullWidth loading={posting} disabled={!ready} onClick={() => void request()}>
-          Find a runner
-        </Button>
+        )}
       </div>
 
       {pinning ? createPortal(

@@ -42,7 +42,7 @@ export function CustomerTopBar() {
     <header className={`relative overflow-hidden bg-ink px-5 text-white md:hidden pb-9 pt-3`}>
       <MapLines className="pointer-events-none absolute inset-0 size-full text-white/[0.07]" />
       <div className="relative flex justify-center">
-        <CourierMark className="h-8" />
+        <CourierMark className="h-9" />
       </div>
       {home ? (
         <div className="relative mt-2 flex items-center justify-between">

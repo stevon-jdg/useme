@@ -1,15 +1,18 @@
-/** Yellow running courier with a parcel and speed swoosh. Original artwork for the UseMe mark. */
+/** The UseMe logo: the running courier and the USEME wordmark. Cropped to the artwork so it sits tight in the header. */
 export function CourierMark({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 96 64" className={className} aria-hidden="true" focusable="false">
-      <path d="M4 50 C20 44 36 46 52 54" stroke="#ffc928" strokeWidth="5" strokeLinecap="round" fill="none" opacity="0.9" />
-      <path d="M14 38 h20 M8 30 h14" stroke="#ffc928" strokeWidth="4" strokeLinecap="round" opacity="0.55" />
-      <circle cx="58" cy="12" r="7" fill="#ffc928" />
-      <path d="M56 22 l-12 16 l10 5 l-5 14" stroke="#ffc928" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-      <path d="M56 22 l9 9 l10 -4" stroke="#ffc928" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-      <path d="M54 43 l12 6 l2 9" stroke="#ffc928" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-      <rect x="70" y="16" width="18" height="15" rx="2.5" fill="#ffc928" />
-      <path d="M70 22 h18" stroke="#171717" strokeWidth="2" opacity="0.5" />
+    <svg viewBox="20 254 880 472" className={className} role="img" aria-label="UseMe" focusable="false">
+      <path d="M 464 534 L 402 715 L 404 717 L 551 716 L 552 675 L 476 675 L 474 671 L 486 640 L 551 639 L 552 605 L 550 602 L 501 602 L 500 595 L 509 573 L 551 572 L 552 536 L 548 533 Z" fill="#FFFF00" fillRule="evenodd" />
+      <path d="M 242 534 L 192 533 L 186 535 L 146 652 L 133 669 L 120 676 L 95 676 L 86 666 L 84 654 L 124 536 L 118 533 L 69 534 L 63 546 L 27 655 L 26 685 L 37 705 L 44 711 L 60 717 L 65 716 L 73 719 L 119 719 L 145 712 L 171 696 L 191 675 L 204 651 L 239 544 L 243 538 Z" fill="#FFFF00" fillRule="evenodd" />
+      <path d="M 404 541 L 376 531 L 334 531 L 304 539 L 280 554 L 262 579 L 258 591 L 260 613 L 272 627 L 285 634 L 330 647 L 338 657 L 337 665 L 334 671 L 322 681 L 300 683 L 292 681 L 284 670 L 285 654 L 232 655 L 228 659 L 226 680 L 234 703 L 247 713 L 263 718 L 314 719 L 346 710 L 372 693 L 383 681 L 395 659 L 399 638 L 396 624 L 386 612 L 367 602 L 319 589 L 316 586 L 315 579 L 319 572 L 327 567 L 344 565 L 353 567 L 359 573 L 359 588 L 412 586 L 415 583 L 416 562 L 412 550 Z" fill="#FFFF00" fillRule="evenodd" />
+      <path d="M 796 332 L 789 323 L 769 318 L 743 318 L 725 323 L 717 333 L 718 362 L 714 364 L 665 349 L 661 335 L 648 329 L 633 338 L 621 352 L 608 377 L 600 408 L 573 428 L 536 464 L 510 476 L 437 481 L 432 487 L 450 495 L 480 501 L 532 501 L 561 491 L 611 462 L 618 455 L 687 467 L 711 477 L 734 496 L 780 543 L 792 548 L 792 539 L 778 512 L 752 476 L 727 450 L 707 436 L 662 416 L 643 411 L 642 407 L 659 378 L 697 382 L 723 380 L 754 384 L 787 383 L 793 373 Z" fill="#FFFF00" fillRule="evenodd" />
+      <path d="M 659 261 L 655 262 L 651 265 L 646 266 L 645 268 L 643 268 L 638 273 L 632 286 L 632 301 L 636 312 L 646 322 L 656 325 L 671 326 L 675 325 L 687 318 L 695 308 L 697 302 L 697 286 L 693 276 L 690 272 L 687 271 L 687 269 L 685 267 L 675 262 L 670 261 L 660 262 Z" fill="#FFFF00" fillRule="evenodd" />
+      <path d="M 770 571 L 769 719 L 895 720 L 894 688 L 819 688 L 815 686 L 815 659 L 819 656 L 831 656 L 832 658 L 833 656 L 886 656 L 887 654 L 886 628 L 817 628 L 815 626 L 815 604 L 892 603 L 892 571 Z" fill="#FF0000" fillRule="evenodd" />
+      <path d="M 571 572 L 572 720 L 608 719 L 608 633 L 610 620 L 614 624 L 637 719 L 672 720 L 699 618 L 702 619 L 702 719 L 740 719 L 739 571 L 678 572 L 656 656 L 653 655 L 632 571 Z" fill="#FF0000" fillRule="evenodd" />
+      <path d="M 611 461 L 636 465 L 647 469 L 655 474 L 678 496 L 704 527 L 712 535 L 720 540 L 725 541 L 725 536 L 722 530 L 722 527 L 718 521 L 716 515 L 712 510 L 713 507 L 715 507 L 741 535 L 748 540 L 752 541 L 753 543 L 757 543 L 757 539 L 754 530 L 741 507 L 740 503 L 731 497 L 725 490 L 719 485 L 716 484 L 710 478 L 692 470 L 688 470 L 686 468 L 679 469 L 669 467 L 662 464 L 655 464 L 638 460 L 633 460 L 629 458 L 625 458 L 622 456 L 619 456 Z" fill="#FFF7A0" fillRule="evenodd" />
+      <path d="M 656 383 L 657 384 L 664 382 L 670 385 L 675 385 L 676 386 L 695 386 L 696 387 L 715 387 L 722 384 L 746 384 L 731 384 L 725 382 L 695 383 L 694 382 L 672 381 L 664 379 L 660 379 Z" fill="#FFF7A0" fillRule="evenodd" />
+      <path d="M 733 320 L 712 320 L 711 321 L 701 322 L 695 325 L 686 325 L 685 326 L 678 326 L 677 324 L 676 327 L 669 328 L 668 330 L 662 334 L 661 336 L 663 340 L 663 345 L 664 347 L 673 351 L 676 351 L 687 355 L 691 355 L 703 361 L 708 361 L 715 363 L 716 362 L 716 337 L 715 333 L 717 331 L 718 327 L 724 322 Z" fill="#FFF7A0" fillRule="evenodd" />
+      <path d="M 645 266 L 631 265 L 619 271 L 607 272 L 597 277 L 590 284 L 585 296 L 587 314 L 592 323 L 598 328 L 610 332 L 611 336 L 609 338 L 598 336 L 584 346 L 567 375 L 557 412 L 536 427 L 500 464 L 491 470 L 471 476 L 422 477 L 411 481 L 411 484 L 433 493 L 458 497 L 438 492 L 431 487 L 431 484 L 439 479 L 500 476 L 526 469 L 537 462 L 538 459 L 573 426 L 599 407 L 602 390 L 613 363 L 625 345 L 632 339 L 626 329 L 629 327 L 640 328 L 650 324 L 645 323 L 634 312 L 630 295 L 633 279 L 639 269 Z" fill="#FFF7A0" fillRule="evenodd" />
     </svg>
   )
 }
