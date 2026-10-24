@@ -1,6 +1,5 @@
-// Supabase Edge Function: sends Web Push notifications. Called by two Database Webhooks:
-//   errand_dispatches INSERT -> tells the offered runner about a new request
-//   errand_messages   INSERT -> tells the other person in the errand about a new message
+// Supabase Edge Function: sends Web Push notifications. Called by ONE Database Webhook:
+//   notifications INSERT -> pushes the same title and text the person sees in the app's bell.
 // Secrets: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT (mailto:you@example.com), WEBHOOK_SECRET
 // SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided by Supabase automatically.
 // Deploy with "Verify JWT" OFF; the webhook is checked with the x-webhook-secret header instead.
@@ -31,41 +30,16 @@ Deno.serve(async (req) => {
     auth: { persistSession: false },
   })
 
-  let userId: string | null = null
-  let payload: { title: string; body: string; url: string; tag: string } | null = null
-
-  if (hook.table === 'errand_dispatches') {
-    if (hook.record.status !== 'pending') return ok({ skipped: true })
-    userId = String(hook.record.runner_id)
-    payload = {
-      title: 'New errand request',
-      body: 'Open UseMe to accept or decline. It expires in about 20 seconds.',
-      url: '/runner',
-      tag: 'dispatch',
-    }
-  } else if (hook.table === 'errand_messages') {
-    const errandId = String(hook.record.errand_id)
-    const sender = String(hook.record.sender_id)
-    const { data: errand } = await admin.from('errands').select('customer_id').eq('id', errandId).maybeSingle()
-    const { data: asg } = await admin
-      .from('errand_assignments')
-      .select('runner_id')
-      .eq('errand_id', errandId)
-      .is('ended_at', null)
-      .maybeSingle()
-    if (!errand) return ok({ skipped: true })
-    const toRunner = sender === errand.customer_id
-    userId = toRunner ? (asg?.runner_id ?? null) : errand.customer_id
-    if (!userId) return ok({ skipped: true })
-    const text = String(hook.record.body ?? '').slice(0, 100)
-    payload = {
-      title: 'New message',
-      body: text,
-      url: toRunner ? '/runner' : `/app/errands/${errandId}`,
-      tag: `chat-${errandId}`,
-    }
-  } else {
-    return ok({ skipped: true })
+  if (hook.table !== 'notifications') return ok({ skipped: true })
+  const r = hook.record
+  const userId = String(r.user_id ?? '')
+  if (!userId) return ok({ skipped: true })
+  const kind = String(r.kind ?? 'general')
+  const payload = {
+    title: String(r.title ?? 'UseMe'),
+    body: String(r.body ?? ''),
+    url: typeof r.link === 'string' && r.link.startsWith('/') ? r.link : '/',
+    tag: kind === 'message' ? `chat-${String(r.errand_id ?? '')}` : kind,
   }
 
   const { data: subs } = await admin.from('push_subscriptions').select('id, endpoint, p256dh, auth').eq('user_id', userId)
@@ -75,7 +49,7 @@ Deno.serve(async (req) => {
       await webpush.sendNotification(
         { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
         JSON.stringify(payload),
-        { TTL: hook.table === 'errand_dispatches' ? 20 : 3600, urgency: 'high' },
+        { TTL: kind === 'dispatch' ? 20 : 3600, urgency: 'high' },
       )
       sent++
     } catch (e) {

@@ -5,6 +5,7 @@ import { BottomNav, type NavItem } from '@/components/layout/BottomNav'
 import { MapLines } from '@/components/illustrations/MapLines'
 import { Logo } from '@/components/ui/Logo'
 import { Notice } from '@/components/ui/Notice'
+import { NotificationBell } from '@/features/notifications/NotificationBell'
 import { useAuth } from '@/features/auth/AuthProvider'
 
 export type { NavItem }
@@ -54,6 +55,8 @@ export function AppShell({ items, area, topBar, bare = false }: { items: NavItem
         {bare ? null : topBar ?? (
           <header className="flex items-center justify-between border-b border-line bg-surface px-4 py-3 md:hidden">
           <Logo />
+          <div className="flex items-center gap-1">
+          {user ? <NotificationBell className="text-ink-soft hover:bg-black/5" /> : null}
           {user ? (
             <button
               type="button"
@@ -64,6 +67,7 @@ export function AppShell({ items, area, topBar, bare = false }: { items: NavItem
               <LogOut className="size-5" aria-hidden="true" />
             </button>
           ) : null}
+          </div>
         </header>
         )}
 

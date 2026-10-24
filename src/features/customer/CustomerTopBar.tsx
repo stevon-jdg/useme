@@ -1,10 +1,10 @@
-import { ArrowLeft, Bell, MapPin } from 'lucide-react'
-import { useState } from 'react'
+import { ArrowLeft, MapPin } from 'lucide-react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { CourierMark } from '@/components/illustrations/CourierMark'
 import { MapLines } from '@/components/illustrations/MapLines'
 import { useAccount } from '@/features/account/useAccount'
 import { useAuth } from '@/features/auth/AuthProvider'
+import { NotificationBell } from '@/features/notifications/NotificationBell'
 import { useCurrentPlace } from './useCurrentPlace'
 
 const TYPE_TITLE: Record<string, string> = {
@@ -32,7 +32,6 @@ export function CustomerTopBar() {
   const { pathname, key } = useLocation()
   const navigate = useNavigate()
   const [params] = useSearchParams()
-  const [bell, setBell] = useState(false)
   const place = useCurrentPlace()
   const home = pathname === '/app'
   const title = titleFor(pathname, params.get('type'))
@@ -62,9 +61,7 @@ export function CustomerTopBar() {
               </p>
             )}
           </div>
-          <button type="button" onClick={() => setBell((v) => !v)} aria-label="Notifications" aria-expanded={bell} className="grid size-10 place-items-center rounded-full text-white/40 hover:text-white/70">
-            <Bell className="size-6" aria-hidden="true" />
-          </button>
+          <NotificationBell className="text-white/55 hover:text-white" />
         </div>
       ) : (
         <div className="relative mt-2 flex items-center gap-2">
@@ -72,16 +69,9 @@ export function CustomerTopBar() {
             <ArrowLeft className="size-6" aria-hidden="true" />
           </button>
           <h1 className="min-w-0 flex-1 truncate text-xl font-medium">{title}</h1>
-          <button type="button" onClick={() => setBell((v) => !v)} aria-label="Notifications" aria-expanded={bell} className="grid size-10 shrink-0 place-items-center rounded-full text-white/40 hover:text-white/70">
-            <Bell className="size-5" aria-hidden="true" />
-          </button>
+          <NotificationBell className="text-white/55 hover:text-white" />
         </div>
       )}
-      {bell ? (
-        <div role="status" className="absolute right-4 top-16 z-30 w-64 rounded-card bg-surface p-4 text-sm text-ink shadow-card">
-          No notifications yet. Updates about your errands show on each errand for now.
-        </div>
-      ) : null}
     </header>
   )
 }
